@@ -1,11 +1,7 @@
 package main
 
-import (
-	"fmt"
-	"io"
-	"net"
-	"time"
-)
+import "net"
+	
 
 func main() {
 	ln, err := net.Listen("tcp", ":8080")
@@ -20,7 +16,19 @@ func main() {
 			panic(err)
 		} 
 
-		io.WriteString(conn, fmt.Sprint("Hello World\n", time.Now(), "\n"))
+		//io.WriteString(conn, fmt.Sprint("Hello World\n", time.Now(), "\n"))
+
+		for {
+			bytes := make([]byte, 1024)
+			n, err := conn.Read(bytes)
+			if err != nil {
+				break
+			}
+			_, err1 := conn.Write(bytes[:n])
+			if err1 != nil {
+				break
+			}
+		}
 
 		conn.Close()
 
