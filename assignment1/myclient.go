@@ -6,7 +6,7 @@ import (
 	"net"
 )
 
-func main() {
+func clientMain() {
 	conn, err := net.Dial("tcp", "localhost:8080")
 	if err != nil {
 		panic(err)
