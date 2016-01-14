@@ -2,8 +2,7 @@ package main
 
 import "net"
 	
-
-func main() {
+func serverMain() {
 	ln, err := net.Listen("tcp", ":8080")
 	if err != nil {
 		panic(err)
@@ -33,6 +32,8 @@ func main() {
 		conn.Close()
 
 	}
+}	
 
-	
+func main() {
+	serverMain()
 }
