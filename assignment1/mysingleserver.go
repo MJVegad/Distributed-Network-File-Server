@@ -5,8 +5,8 @@ import (
 	"strings"
 	"bufio"
 	"io"
-	//"fmt"
 	"strconv"
+	"time"
 	)
 
 type Command struct {
@@ -18,7 +18,7 @@ type Command struct {
 type File struct {
 	Numbytes uint64
 	Version uint64
-	//Exptime uint64
+	Exptime int
 	Content []byte
 }
 
@@ -34,69 +34,13 @@ func Extend(slice []byte, slice1 []byte) []byte {
     return slice
 }
 
-/*func fileServer(commands chan Command) {
-	
-		var filerepo = make(map[string]File)
-		var data = make(map[string]string)
-		for cmd := range commands {
-			if len(cmd.Fields)<2 {
-				cmd.Result <- "Expected atleast 2 arguments"
-				continue
-			}
-
-			fmt.Println("GOT command::", cmd)
-
-			switch cmd.Fields[0] {
-		case "write":
-			if len(cmd.Fields) < 3 {
-				cmd.Result <- "ERR_CMD_ERR\r\n"
-				continue	
-			}
-			key := cmd.Fields[1]
-			if val, ok := filerepo[key]; ok {
-				val.Content = cmd.Content
-				val.Numbytes,_ = strconv.ParseUint(cmd.Fields[2],10,64)
-				
-			} else {
-				numbytes1,_ := strconv.ParseUint(cmd.Fields[2],10,64)
-				filerepo[key] = File{Numbytes: numbytes1, Version: 0, Content: cmd.Content}
-			}
-			
-			//data[key] = value
-			
-			cmd.Result <- ""
-		case "GET":
-			key := cmd.Fields[1]
-			value := data[key]
-			//io.WriteString(conn, value+"\n")
-			cmd.Result <- value
-		case "DEL":
-			key := cmd.Fields[1]
-			delete(data, key)
-			cmd.Result <- ""
-		default:
-			cmd.Result <- "Invalid command "+ cmd.Fields[0] +"\n"
-		}
-
-
-		}		
-}*/
-
 var filerepo = make(map[string]File)
 
 func handle(conn net.Conn) {
-		//defer conn.Close()
-
-		//scanner := bufio.NewScanner(conn)
-		//for scanner.Scan() {
 		nr := bufio.NewReader(conn)
-		//ln := scanner.Text()
-		//fs := strings.Fields(ln)
 		ln,_:= nr.ReadString('\n')
-		//ln := string(ln1)
 		fs := strings.Fields(ln)
 
-		//result := make(chan string)
 		
 		switch fs[0] {
 			
@@ -104,57 +48,109 @@ func handle(conn net.Conn) {
 			nb, _ := strconv.Atoi(fs[2])
 			data := make([]byte,nb)
 			_,_ = io.ReadFull(nr, data)
-			key := fs[1]
-			if val, ok := filerepo[key]; ok {
-				numbytes1,_ := strconv.ParseUint(fs[2],10,64)
-				filerepo[key] = File{Numbytes: numbytes1, Version: val.Version, Content: data}
-				
-			} else {
-				numbytes1,_ := strconv.ParseUint(fs[2],10,64)
-				filerepo[key] = File{Numbytes: numbytes1, Version: 0, Content: data}
-			}
-		
-			io.WriteString(conn, "OK "+strconv.FormatUint(filerepo[key].Version,10)+"\n")		
-		case "read":
-			key := fs[1]
-			if val, ok := filerepo[key]; ok {
-			io.WriteString(conn, "CONTENTS "+strconv.FormatUint(val.Version,10)+" "+strconv.FormatUint(filerepo[key].Numbytes,10)+"\n"+string(filerepo[key].Content)+"\n")
-			} else {
-				io.WriteString(conn, "ERR_FILE_NOT_FOUND\n")
-			}	
-		case "cas":
-			key := fs[1]
-			nb, _ := strconv.ParseUint(fs[3],10,64)
-			data := make([]byte,nb)
-			_,_ = io.ReadFull(nr, data)
-			if val, ok := filerepo[key]; ok {
-				version := strconv.FormatUint(val.Version,10)
-				if strings.Compare(version, fs[2])==0 {
-					numbytes1,_ := strconv.ParseUint(fs[3],10,64)
-					filerepo[key] = File{Numbytes: numbytes1, Version: val.Version+1, Content: data}
-					
-					io.WriteString(conn, "OK "+strconv.FormatUint(filerepo[key].Version,10)+"\n")
+			
+			if len(fs)<=4 {
+				key := fs[1]
+				expt := 0
+				if len(key)<=250 {
+				if len(fs)==4 {
+					i,_ := strconv.Atoi(fs[3])
+					expt = time.Now().Second() + i
+				}	
+				if val, ok := filerepo[key]; ok {
+					numbytes1,_ := strconv.ParseUint(fs[2],10,64)
+					filerepo[key] = File{Numbytes: numbytes1, Version: val.Version,Exptime: expt, Content: data}
 				} else {
-					io.WriteString(conn, "ERR_VERSION\n")
-				}    
+					numbytes1,_ := strconv.ParseUint(fs[2],10,64)
+					filerepo[key] = File{Numbytes: numbytes1, Version: 0,Exptime: expt, Content: data}
+				}
+				io.WriteString(conn, "OK "+strconv.FormatUint(filerepo[key].Version,10)+"\r\n")		
+		        } else {
+		        	io.WriteString(conn,"ERR_INTERNAL\r\n")
+		        }
 			} else {
-				io.WriteString(conn, "ERR_FILE_NOT_FOUND\n")
-			}	
-		case "delete":
-			key := fs[1]
-			if _, ok := filerepo[key]; ok {
-				delete(filerepo, key)
-				io.WriteString(conn, "OK\n")
+				io.WriteString(conn,"ERR_CMD_ERR\r\n")
+			}		
+		case "read":
+			if len(fs)==2 {
+				key := fs[1]
+				if len(key)<=250 {
+					if filerepo[key].Exptime!=0 && filerepo[key].Exptime < time.Now().Second() {
+						io.WriteString(conn,"ERR_FILE_NOT_FOUND\r\n")
+					} else {		
+					if val, ok := filerepo[key]; ok {
+					io.WriteString(conn, "CONTENTS "+strconv.FormatUint(val.Version,10)+" "+strconv.FormatUint(filerepo[key].Numbytes,10)+" "+strconv.Itoa(filerepo[key].Exptime)+"\r\n"+string(filerepo[key].Content)+"\r\n")
+					} else {
+						io.WriteString(conn, "ERR_FILE_NOT_FOUND\r\n")
+					}
+					}
+					} else {
+						io.WriteString(conn,"ERR_INTERNAL\r\n")
+					}	
+					
 			} else {
-				io.WriteString(conn, "ERR_FILE_NOT_FOUND\n")
+				io.WriteString(conn,"ERR_CMD_ERR\r\n")
 			}
+		case "cas":
+			if len(fs)<=5 {
+				key := fs[1]
+				expt := 0
+				if len(fs)==5 {
+					i,_ := strconv.Atoi(fs[4])
+					expt = time.Now().Second() + i
+				}	
 				
+				if len(key)<=250 {
+				if filerepo[key].Exptime!=0 && filerepo[key].Exptime < time.Now().Second() {
+						io.WriteString(conn,"ERR_FILE_NOT_FOUND\r\n")
+					} else {	
+				nb, _ := strconv.ParseUint(fs[3],10,64)
+				data := make([]byte,nb)
+				_,_ = io.ReadFull(nr, data)
+				if val, ok := filerepo[key]; ok {
+					version := strconv.FormatUint(val.Version,10)
+					if strings.Compare(version, fs[2])==0 {
+						numbytes1,_ := strconv.ParseUint(fs[3],10,64)
+						filerepo[key] = File{Numbytes: numbytes1, Version: val.Version+1, Exptime: expt, Content: data}
+					
+						io.WriteString(conn, "OK "+strconv.FormatUint(filerepo[key].Version,10)+"\r\n")
+				} else {
+					io.WriteString(conn, "ERR_VERSION\r\n")
+				}    
+				} else {
+					io.WriteString(conn,"ERR_FILE_NOT_FOUND\r\n")
+				}
+				}
+			} else {
+				io.WriteString(conn, "ERR_INTERNAL\r\n")
+			}	
+			} else {
+				io.WriteString(conn,"ERR_CMD_ERR\r\n")
+			}
+		case "delete":
+			if len(fs)==2 {
+				key := fs[1]
+				if len(key)<=250 {
+					if filerepo[key].Exptime!=0 && filerepo[key].Exptime < time.Now().Second() {
+						io.WriteString(conn,"ERR_FILE_NOT_FOUND\r\n")
+					} else {
+				if _, ok := filerepo[key]; ok {
+					delete(filerepo, key)
+					io.WriteString(conn, "OK\r\n")
+				} else {
+					io.WriteString(conn, "ERR_FILE_NOT_FOUND\r\n")
+				}
+				}
+				} else {
+					io.WriteString(conn,"ERR_INTERNAL\r\n")
+				}
+				} else {
+					io.WriteString(conn,"ERR_CMD_ERR\r\n")
+			}	
 		default:
-			io.WriteString(conn, "ERR_CMD_ERR\n")
+			io.WriteString(conn, "ERR_CMD_ERR\r\n")
 				
 		}	
-			
-		//io.WriteString(conn, ln)
 		
 	}
 
