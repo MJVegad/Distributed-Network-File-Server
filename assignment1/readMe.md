@@ -124,7 +124,6 @@ For each of the test cases the client sends a command to the server, reads the r
 * A structure is is used to store values corresponding to the file into a map. Key of map is filename and value is the structure.
 * Read/Write mutex are used to handle the race conditions created by the concurrent access of clients on the shared data structure.
 * The server accepts connection on port 8080 and for every client handles its connection on a different thread.
-* The command handling is done in a way that if the command format is not proper (like command length should not be greater than 500 bytes), then the connection is closed for the client issuing that command.
 
 ### Todo
 1. To make the file server storage persistent suing leveldb
