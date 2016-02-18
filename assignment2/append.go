@@ -18,7 +18,6 @@ func (sm *StateMachine) AppendEventHandler ( event interface{} ) (actions []inte
 			for _, pid := range sm.peerIds {
 				actions = append(actions, Send{peerId: pid, ev: AppendEntriesReqEv{term: sm.currentTerm, leaderId: sm.serverId, prevLogIndex: uint64(len(sm.log)-2), prevLogTerm: sm.log[uint64(len(sm.log)-2)].term, entries: sm.log[uint64(len(sm.log)-1):] , commitIndex: sm.commitIndex}})
 			}
-			// add code for commit and client response
 		case "follower":
 		case "candidate":
 		default: println("Invalid state")	

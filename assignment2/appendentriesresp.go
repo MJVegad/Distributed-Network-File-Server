@@ -27,6 +27,7 @@ func (sm *StateMachine) AppendEntriesRespEventHandler ( event interface{} ) (act
 			} else {
 				sm.nextIndex[cmd.from] = uint64(len(sm.log))
 				// Update match index
+				
 			}
 		case "follower":
 			if cmd.term > sm.currentTerm {
