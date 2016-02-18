@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	
 )
 
 type TimeoutEv struct {
@@ -9,8 +9,8 @@ type TimeoutEv struct {
 }
 
 func (sm *StateMachine) TimeoutEventHandler ( event interface{} ) (actions []interface{}) {
-	cmd := event.(TimeoutEv)
-	fmt.Printf("%v\n", cmd)
+	//cmd := event.(TimeoutEv)
+	//fmt.Printf("%v\n", cmd)
 	switch sm.currentState {
 		case "leader":
 			for _, pid := range sm.peerIds {
