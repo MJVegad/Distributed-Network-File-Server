@@ -1,7 +1,7 @@
 package main
 
 import (
-	
+	//"fmt"
 )
 
 type TimeoutEv struct {
@@ -18,6 +18,7 @@ func (sm *StateMachine) TimeoutEventHandler ( event interface{} ) (actions []int
 			}
 		case "follower":
 			sm.totalvotes = 1
+			sm.novotes = 0
 			sm.currentTerm = sm.currentTerm + 1
 			sm.currentState = "candidate"
 			sm.votedFor = sm.serverId
@@ -27,6 +28,8 @@ func (sm *StateMachine) TimeoutEventHandler ( event interface{} ) (actions []int
 				actions = append(actions, Send{peerId: pid, ev: VoteReqEv{term: sm.currentTerm, candidateId: sm.serverId, lastLogIndex: uint64(len(sm.log)-1), lastLogTerm: sm.log[len(sm.log)-1].term}})
 			}
 		case "candidate":
+			sm.totalvotes = 1
+			sm.novotes = 0
 			sm.currentTerm = sm.currentTerm + 1
 			sm.votedFor = sm.serverId
 			actions = append(actions, StateStore{state: sm.currentState, term: sm.currentTerm, votedFor:sm.votedFor})

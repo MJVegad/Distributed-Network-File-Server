@@ -17,6 +17,7 @@ func (sm *StateMachine) VoteRespEventHandler ( event interface{} ) (actions []in
 		case "follower":
 			if sm.currentTerm < cmd.term {
 				sm.currentTerm = cmd.term
+				sm.votedFor = 0
 				actions = append(actions, StateStore{state: sm.currentState, term: sm.currentTerm, votedFor:sm.votedFor})
 			}	
 		case "candidate":
@@ -31,6 +32,19 @@ func (sm *StateMachine) VoteRespEventHandler ( event interface{} ) (actions []in
 						actions = append(actions, Send{peerId: pid, ev: AppendEntriesReqEv{term: sm.currentTerm, leaderId: sm.serverId, prevLogIndex: uint64(len(sm.log)-2), prevLogTerm: sm.log[len(sm.log)-2].term, entries: nil, commitIndex: sm.commitIndex}})
 					}
 					actions = append(actions, Alarm{t: 100})
+				}
+			} else {
+				if cmd.term > sm.currentTerm {
+					sm.currentTerm = cmd.term
+					sm.votedFor = 0
+					sm.currentState = "follower"
+					actions = append(actions, Alarm{t: 100})
+				} else {
+					sm.novotes = sm.novotes + 1
+					if sm.novotes >= sm.majority {
+						sm.currentState = "follower"
+						actions = append(actions, Alarm{t: 100})
+					}
 				}
 			}
 		default: println("Invalid state")	

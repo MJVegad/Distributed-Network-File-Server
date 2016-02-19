@@ -18,6 +18,7 @@ func (sm *StateMachine) AppendEntriesRespEventHandler ( event interface{} ) (act
 			if cmd.success == false {
 				if sm.currentTerm < cmd.term {
 					sm.currentTerm = cmd.term
+					sm.votedFor = 0
 					sm.currentState = "follower"
 					actions = append(actions, StateStore{state: sm.currentState, term: sm.currentTerm, votedFor:sm.votedFor})
 				} else {
@@ -26,12 +27,33 @@ func (sm *StateMachine) AppendEntriesRespEventHandler ( event interface{} ) (act
 				}
 			} else {
 				sm.nextIndex[cmd.from] = uint64(len(sm.log))
-				// Update match index
-				
+				lastCommitIndex := sm.commitIndex
+				temp := uint64(1)
+				for i:=0;i<len(sm.peerIds);i++ {
+					if sm.matchIndex[i] > lastCommitIndex {
+						for j:=0; j<len(sm.peerIds); j++ {
+							if j!=i && sm.matchIndex[j]>=sm.matchIndex[i] {
+								temp = temp + uint64(1)
+							}		
+							if temp >= sm.majority && sm.matchIndex[i] > lastCommitIndex {
+								lastCommitIndex = sm.matchIndex[i]
+								break
+							}				
+						}
+						temp=1
+					}
+				}
+					if lastCommitIndex > sm.commitIndex && sm.log[lastCommitIndex].term == sm.currentTerm {
+						for i:=sm.commitIndex+uint64(1);i<=lastCommitIndex;i++ {
+							actions = append(actions, Commit{index: i, command: sm.log[i].command, err: nil})
+						}
+						sm.commitIndex = lastCommitIndex
+					}
 			}
 		case "follower":
 			if cmd.term > sm.currentTerm {
 				sm.currentTerm = cmd.term
+				sm.votedFor = 0
 				actions = append(actions, StateStore{state: sm.currentState, term: sm.currentTerm, votedFor:sm.votedFor})
 			}	
 		case "candidate":

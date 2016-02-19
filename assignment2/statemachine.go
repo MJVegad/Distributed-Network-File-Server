@@ -44,5 +44,6 @@ type StateMachine struct {
 		votedFor uint64
 		currentState string
 		totalvotes uint64
+		novotes uint64
 } 
 
