@@ -20,6 +20,7 @@ func (sm *StateMachine) AppendEntriesReqEventHandler ( event interface{} ) (acti
 		case "leader":
 			if sm.currentTerm <= cmd.term {
 				sm.currentTerm = cmd.term
+				sm.votedFor = 0
 				sm.currentState = "follower"
 				actions = append(actions, StateStore{state: sm.currentState, term: sm.currentTerm, votedFor:sm.votedFor})
 				actions = append(actions, Send{peerId: sm.serverId, ev: AppendEntriesReqEv{term: cmd.term, leaderId: cmd.leaderId, prevLogIndex: cmd.prevLogIndex, prevLogTerm: cmd.prevLogTerm, entries: cmd.entries, commitIndex: cmd.commitIndex}})
@@ -30,6 +31,7 @@ func (sm *StateMachine) AppendEntriesReqEventHandler ( event interface{} ) (acti
 			actions = append(actions, Alarm{t: 100})
 			if sm.currentTerm <= cmd.term {
 				sm.currentTerm = cmd.term
+				sm.votedFor = 0
 				actions = append(actions, StateStore{term: sm.currentTerm, votedFor:sm.votedFor})
 				if (sm.log[cmd.prevLogIndex].term == cmd.prevLogTerm) {
 					k:=0
@@ -60,6 +62,7 @@ func (sm *StateMachine) AppendEntriesReqEventHandler ( event interface{} ) (acti
 	   	case "candidate":
 	   			if sm.currentTerm <= cmd.term {
 					sm.currentTerm = cmd.term
+					sm.votedFor = 0
 					sm.currentState = "follower"
 					actions = append(actions, StateStore{state: sm.currentState, term: sm.currentTerm, votedFor:sm.votedFor})
 					actions = append(actions, Send{peerId: cmd.leaderId, ev: AppendEntriesReqEv{term: cmd.term, leaderId: cmd.leaderId, prevLogIndex: cmd.prevLogIndex, prevLogTerm: cmd.prevLogTerm, entries: cmd.entries, commitIndex: cmd.commitIndex}})
