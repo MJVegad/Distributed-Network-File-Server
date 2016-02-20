@@ -2,7 +2,6 @@ package main
 
 import (
 	"testing"
-	"fmt"
 )
 
 func TestCandidateVoteResponse (t *testing.T) {
@@ -28,11 +27,6 @@ func TestCandidateVoteResponse (t *testing.T) {
 		Send{peerId: 4, ev: AppendEntriesReqEv{term: 2, leaderId: 1, prevLogIndex: 0, prevLogTerm: 1, commitIndex: 1}}, 
 		Send{peerId: 5, ev: AppendEntriesReqEv{term: 2, leaderId: 1, prevLogIndex: 0, prevLogTerm: 1, commitIndex: 1}}}
 
-		for i:=0;i<len(exactions);i++ {
-			fmt.Printf("%v\n", exactions[i])
-			fmt.Printf("%v\n", result[i])
-		}		
-	
 	//expect (t, result, excpectedPeerIds)
 	ExpectStateMachine(t, &sm, &exsm)	
 	ExpectActions (t, result, exactions)
