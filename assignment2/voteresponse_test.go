@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestCandidateVoteResponse (t *testing.T) {
+func TestCandidateVoteResponse1 (t *testing.T) {
 	//when candidate becomes leader
 	sm := StateMachine {serverId: uint64(1), peerIds: []uint64{uint64(2),uint64(3),uint64(4),uint64(5)}, 
 		majority: uint64(3), commitIndex: uint64(1), nextIndex: []uint64{uint64(2),uint64(2),uint64(2),uint64(2)}, 
@@ -31,4 +31,29 @@ func TestCandidateVoteResponse (t *testing.T) {
 	ExpectStateMachine(t, &sm, &exsm)	
 	ExpectActions (t, result, exactions)
 	
+}
+
+
+func TestCandidateVoteResponse2 (t *testing.T) {
+	//when candidate changes state to follower due to novotes
+	sm := StateMachine {serverId: uint64(1), peerIds: []uint64{uint64(2),uint64(3),uint64(4),uint64(5)}, 
+		majority: uint64(3), commitIndex: uint64(1), nextIndex: []uint64{uint64(2),uint64(2),uint64(2),uint64(2)}, 
+		matchIndex: []uint64{uint64(1),uint64(1),uint64(1),uint64(1)}, 
+		log: []logEntry{logEntry{term: 1, command: []byte("add")},logEntry{term: 2, command: []byte("disp")}}, 
+		currentTerm: 2, votedFor: 1, currentState: "candidate", totalvotes: 2, novotes: 2}
+
+	result := sm.ProcessEvent(VoteRespEv{term: 2, voteGranted: false})
+
+	exsm := StateMachine {serverId: uint64(1), peerIds: []uint64{uint64(2),uint64(3),uint64(4),uint64(5)}, 
+		majority: uint64(3), commitIndex: uint64(1), nextIndex: []uint64{uint64(2),uint64(2),uint64(2),uint64(2)}, 
+		matchIndex: []uint64{uint64(1),uint64(1),uint64(1),uint64(1)}, 
+		log: []logEntry{logEntry{term: 1, command: []byte("add")},logEntry{term: 2, command: []byte("disp")}}, 
+		currentTerm: 2, votedFor: 1, currentState: "follower", totalvotes: 2, novotes: 3}
+
+	exactions := []interface{}{Alarm{t: 100}, StateStore{state: "follower", term: 2, votedFor:1}}
+		
+	ExpectStateMachine(t, &sm, &exsm)	
+	ExpectActions (t, result, exactions)
+	
 } 
+

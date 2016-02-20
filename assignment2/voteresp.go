@@ -46,6 +46,8 @@ func (sm *StateMachine) VoteRespEventHandler ( event interface{} ) (actions []in
 						actions = append(actions, Alarm{t: 100})
 					}
 				}
+				actions = append(actions, StateStore{state: sm.currentState, term: sm.currentTerm, votedFor:sm.votedFor})
+			
 			}
 		default: println("Invalid state")	
 				
