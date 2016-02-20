@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	//"fmt"
 )
 
 type AppendEntriesRespEv struct {	
@@ -12,7 +12,7 @@ type AppendEntriesRespEv struct {
 
 func (sm *StateMachine) AppendEntriesRespEventHandler ( event interface{} ) (actions []interface{}) {
 	cmd := event.(AppendEntriesRespEv)
-	fmt.Printf("%v\n", cmd)
+	//fmt.Printf("%v\n", cmd)
 	switch sm.currentState {
 		case "leader":
 			if cmd.success == false {

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	//"fmt"
 )
 
 type AppendEntriesReqEv struct {
@@ -15,33 +15,40 @@ type AppendEntriesReqEv struct {
 
 func (sm *StateMachine) AppendEntriesReqEventHandler ( event interface{} ) (actions []interface{}){
 	cmd := event.(AppendEntriesReqEv)
-	fmt.Printf("%v\n", cmd)
+	//fmt.Printf("%v\n", cmd)
 	switch sm.currentState {
 		case "leader":
 			if sm.currentTerm <= cmd.term {
+				if sm.currentTerm < cmd.term {
+					sm.votedFor = 0
+				}
 				sm.currentTerm = cmd.term
-				sm.votedFor = 0
 				sm.currentState = "follower"
-				actions = append(actions, StateStore{state: sm.currentState, term: sm.currentTerm, votedFor:sm.votedFor})
-				actions = append(actions, Send{peerId: sm.serverId, ev: AppendEntriesReqEv{term: cmd.term, leaderId: cmd.leaderId, prevLogIndex: cmd.prevLogIndex, prevLogTerm: cmd.prevLogTerm, entries: cmd.entries, commitIndex: cmd.commitIndex}})
+			//	actions = append(actions, StateStore{state: sm.currentState, term: sm.currentTerm, votedFor:sm.votedFor}) // make it function
+			//	actions = append(actions, Send{peerId: sm.serverId, ev: AppendEntriesReqEv{term: cmd.term, leaderId: cmd.leaderId, prevLogIndex: cmd.prevLogIndex, prevLogTerm: cmd.prevLogTerm, entries: cmd.entries, commitIndex: cmd.commitIndex}}) //make it function
+				sm.AppendEntriesReqEventHandler(event) 
 			} else {
 				actions = append(actions, Send{peerId: cmd.leaderId, ev: AppendEntriesRespEv{from: sm.serverId, term: sm.currentTerm, success: false}})
 			}
 		case "follower":
-			actions = append(actions, Alarm{t: 100})
+			
 			if sm.currentTerm <= cmd.term {
+				if sm.currentTerm < cmd.term {
+					sm.votedFor = 0
+				}
 				sm.currentTerm = cmd.term
-				sm.votedFor = 0
-				actions = append(actions, StateStore{term: sm.currentTerm, votedFor:sm.votedFor})
-				if (sm.log[cmd.prevLogIndex].term == cmd.prevLogTerm) {
+				actions = append(actions, Alarm{t: 100})
+				actions = append(actions, StateStore{state: sm.currentState, term: sm.currentTerm, votedFor:sm.votedFor})
+				if ( (cmd.prevLogTerm == 0) || ( cmd.prevLogIndex < uint64(len(sm.log)) && (sm.log[cmd.prevLogIndex].term == cmd.prevLogTerm)) ) {
 					k:=0
+					
 					templog := make([]logEntry, cmd.prevLogIndex+uint64(1)+uint64(len(cmd.entries)), cmd.prevLogIndex+uint64(1)+uint64(len(cmd.entries)))
 					for i:=uint64(0);i<cmd.prevLogIndex+uint64(1);i++ {
 						templog[i]=sm.log[i]
 					}
 					
-					for j:=cmd.prevLogIndex+uint64(1);j<uint64(len(cmd.entries));j++ {
-						templog[j+uint64(k)] = cmd.entries[k]
+					for j:=cmd.prevLogIndex+uint64(1);j<uint64(cmd.prevLogIndex+uint64(1)+uint64(len(cmd.entries)));j++ {
+						templog[j] = cmd.entries[k]
 						k++
 					}
 					sm.log = templog
@@ -61,11 +68,13 @@ func (sm *StateMachine) AppendEntriesReqEventHandler ( event interface{} ) (acti
 	   		}
 	   	case "candidate":
 	   			if sm.currentTerm <= cmd.term {
-					sm.currentTerm = cmd.term
+	   				if sm.currentTerm < cmd.term {
 					sm.votedFor = 0
+				    }
+					sm.currentTerm = cmd.term
 					sm.currentState = "follower"
 					actions = append(actions, StateStore{state: sm.currentState, term: sm.currentTerm, votedFor:sm.votedFor})
-					actions = append(actions, Send{peerId: cmd.leaderId, ev: AppendEntriesReqEv{term: cmd.term, leaderId: cmd.leaderId, prevLogIndex: cmd.prevLogIndex, prevLogTerm: cmd.prevLogTerm, entries: cmd.entries, commitIndex: cmd.commitIndex}})
+					sm.AppendEntriesReqEventHandler(event)
 				} else {
 					actions = append(actions, Send{peerId: cmd.leaderId, ev: AppendEntriesRespEv{from: sm.serverId, term: sm.currentTerm, success: false}})
 				}	
