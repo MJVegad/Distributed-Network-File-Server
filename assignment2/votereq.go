@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	
 )
 
 type VoteReqEv struct {	
@@ -13,7 +13,7 @@ type VoteReqEv struct {
 
 func (sm *StateMachine) VoteReqEventHandler ( event interface{} ) (actions []interface{}) {
 	cmd := event.(VoteReqEv)
-	fmt.Printf("%v\n", cmd)
+	//fmt.Printf("%v\n", cmd)
 	switch sm.currentState {
 		case "leader":
 			if sm.currentTerm < cmd.term {
