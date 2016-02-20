@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	
 )
 
 type VoteRespEv struct {	
@@ -11,7 +11,7 @@ type VoteRespEv struct {
 
 func (sm *StateMachine) VoteRespEventHandler ( event interface{} ) (actions []interface{}) {
 	cmd := event.(VoteRespEv)
-	fmt.Printf("%v\n", cmd)
+	//fmt.Printf("%v\n", cmd)
 	switch sm.currentState {
 		case "leader":
 		case "follower":
@@ -26,12 +26,12 @@ func (sm *StateMachine) VoteRespEventHandler ( event interface{} ) (actions []in
 				if sm.totalvotes >= sm.majority {
 					sm.currentState = "leader"
 					actions = append(actions, StateStore{state: sm.currentState, term: sm.currentTerm, votedFor:sm.votedFor})
-					for _, pid := range sm.peerIds {
-						sm.nextIndex[pid] = uint64(len(sm.log))
-						sm.matchIndex[pid] = 0
-						actions = append(actions, Send{peerId: pid, ev: AppendEntriesReqEv{term: sm.currentTerm, leaderId: sm.serverId, prevLogIndex: uint64(len(sm.log)-2), prevLogTerm: sm.log[len(sm.log)-2].term, entries: nil, commitIndex: sm.commitIndex}})
-					}
 					actions = append(actions, Alarm{t: 100})
+					for i:=0;i<len(sm.peerIds);i++ {
+						sm.nextIndex[i] = uint64(len(sm.log))
+						sm.matchIndex[i] = 0
+						actions = append(actions, Send{peerId: sm.peerIds[i], ev: AppendEntriesReqEv{term: sm.currentTerm, leaderId: sm.serverId, prevLogIndex: uint64(len(sm.log)-2), prevLogTerm: sm.log[len(sm.log)-2].term, entries: nil, commitIndex: sm.commitIndex}})
+					}
 				}
 			} else {
 				if cmd.term > sm.currentTerm {
