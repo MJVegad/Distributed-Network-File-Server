@@ -13,8 +13,8 @@ func (sm *StateMachine) TimeoutEventHandler ( event interface{} ) (actions []int
 	//fmt.Printf("%v\n", cmd)
 	switch sm.currentState {
 		case "leader":
-			for _, pid := range sm.peerIds {
-				actions = append(actions, Send{peerId: pid, ev: AppendEntriesReqEv{term: sm.currentTerm, leaderId: sm.serverId, prevLogIndex: uint64(len(sm.log)-2), prevLogTerm: sm.log[len(sm.log)-2].term, entries: nil, commitIndex: sm.commitIndex}})
+			for i:=0;i<len(sm.peerIds);i++ {
+				actions = append(actions, Send{peerId: sm.peerIds[i], ev: AppendEntriesReqEv{term: sm.currentTerm, leaderId: sm.serverId, prevLogIndex: sm.nextIndex[i]-1, prevLogTerm: sm.log[sm.nextIndex[i]-1].term, entries: sm.log[sm.nextIndex[i]:], commitIndex: sm.commitIndex}})
 			}
 		case "follower":
 			sm.totalvotes = 1

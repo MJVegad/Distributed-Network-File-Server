@@ -1,7 +1,7 @@
 package main
 
 import (
-	//"fmt"
+//	"fmt"
 )
 
 type AppendEntriesRespEv struct {	
@@ -15,18 +15,26 @@ func (sm *StateMachine) AppendEntriesRespEventHandler ( event interface{} ) (act
 	//fmt.Printf("%v\n", cmd)
 	switch sm.currentState {
 		case "leader":
+			var ind int
+			for i:=0;i<len(sm.peerIds);i++ {
+						if(sm.peerIds[i]==cmd.from) {
+							ind = i
+							break
+						}
+					}
 			if cmd.success == false {
 				if sm.currentTerm < cmd.term {
 					sm.currentTerm = cmd.term
 					sm.votedFor = 0
 					sm.currentState = "follower"
+					actions = append(actions, Alarm{t: 100})
 					actions = append(actions, StateStore{state: sm.currentState, term: sm.currentTerm, votedFor:sm.votedFor})
 				} else {
-					sm.nextIndex[cmd.from] = sm.nextIndex[cmd.from]-uint64(1)
-					actions = append(actions, Send{peerId: cmd.from, ev: AppendEntriesReqEv{term: sm.currentTerm, leaderId: sm.serverId, prevLogIndex: sm.nextIndex[cmd.from]-uint64(1), prevLogTerm: sm.log[sm.nextIndex[cmd.from]-uint64(1)].term, entries: sm.log[sm.nextIndex[cmd.from]:], commitIndex: sm.commitIndex}})
+					sm.nextIndex[ind] = sm.nextIndex[ind]-uint64(1)
+					actions = append(actions, Send{peerId: cmd.from, ev: AppendEntriesReqEv{term: sm.currentTerm, leaderId: sm.serverId, prevLogIndex: sm.nextIndex[ind]-uint64(1), prevLogTerm: sm.log[sm.nextIndex[ind]-uint64(1)].term, entries: sm.log[sm.nextIndex[ind]:], commitIndex: sm.commitIndex}})
 				}
 			} else {
-				sm.nextIndex[cmd.from] = uint64(len(sm.log))
+				sm.nextIndex[ind] = uint64(len(sm.log))
 				lastCommitIndex := sm.commitIndex
 				temp := uint64(1)
 				for i:=0;i<len(sm.peerIds);i++ {
@@ -57,6 +65,11 @@ func (sm *StateMachine) AppendEntriesRespEventHandler ( event interface{} ) (act
 				actions = append(actions, StateStore{state: sm.currentState, term: sm.currentTerm, votedFor:sm.votedFor})
 			}	
 		case "candidate":
+			if cmd.term > sm.currentTerm {
+				sm.currentTerm = cmd.term
+				sm.votedFor = 0
+				actions = append(actions, StateStore{state: sm.currentState, term: sm.currentTerm, votedFor:sm.votedFor})
+			}	
 		default: println("Invalid state")		
 	}	
 	return actions

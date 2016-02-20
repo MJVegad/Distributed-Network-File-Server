@@ -26,7 +26,7 @@ func (sm *StateMachine) AppendEntriesReqEventHandler ( event interface{} ) (acti
 				sm.currentState = "follower"
 			//	actions = append(actions, StateStore{state: sm.currentState, term: sm.currentTerm, votedFor:sm.votedFor}) // make it function
 			//	actions = append(actions, Send{peerId: sm.serverId, ev: AppendEntriesReqEv{term: cmd.term, leaderId: cmd.leaderId, prevLogIndex: cmd.prevLogIndex, prevLogTerm: cmd.prevLogTerm, entries: cmd.entries, commitIndex: cmd.commitIndex}}) //make it function
-				sm.AppendEntriesReqEventHandler(event) 
+				actions = sm.AppendEntriesReqEventHandler(event) 
 			} else {
 				actions = append(actions, Send{peerId: cmd.leaderId, ev: AppendEntriesRespEv{from: sm.serverId, term: sm.currentTerm, success: false}})
 			}
@@ -49,10 +49,11 @@ func (sm *StateMachine) AppendEntriesReqEventHandler ( event interface{} ) (acti
 					
 					for j:=cmd.prevLogIndex+uint64(1);j<uint64(cmd.prevLogIndex+uint64(1)+uint64(len(cmd.entries)));j++ {
 						templog[j] = cmd.entries[k]
+						actions = append(actions, LogStore{index: j, command: cmd.entries[k]})
 						k++
 					}
 					sm.log = templog
-					actions = append(actions, LogStore{index: uint64(len(sm.log)-1), command: sm.log[uint64(len(sm.log)-1)]})
+					//actions = append(actions, LogStore{index: uint64(len(sm.log)-1), command: sm.log[uint64(len(sm.log)-1)]})
 					actions = append(actions, Send{peerId: cmd.leaderId, ev: AppendEntriesRespEv{from: sm.serverId, term: cmd.term, success: true}})
 					if cmd.commitIndex > sm.commitIndex {
 						if uint64(len(sm.log)-1) < sm.commitIndex {
@@ -73,8 +74,7 @@ func (sm *StateMachine) AppendEntriesReqEventHandler ( event interface{} ) (acti
 				    }
 					sm.currentTerm = cmd.term
 					sm.currentState = "follower"
-					actions = append(actions, StateStore{state: sm.currentState, term: sm.currentTerm, votedFor:sm.votedFor})
-					sm.AppendEntriesReqEventHandler(event)
+					actions = sm.AppendEntriesReqEventHandler(event)
 				} else {
 					actions = append(actions, Send{peerId: cmd.leaderId, ev: AppendEntriesRespEv{from: sm.serverId, term: sm.currentTerm, success: false}})
 				}	
