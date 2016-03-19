@@ -1,0 +1,13 @@
+{
+    "InboxSize": 100,
+    "Peers":[
+	{"Id":100,"Address":"localhost:8001"},
+	{"Id":200,"Address":"localhost:8002"},
+	{"Id":300,"Address":"localhost:8003"},
+	{"Id":400,"Address":"localhost:8004"},
+	{"Id":500,"Address":"localhost:8005"}
+   ]
+}
+
+
+
