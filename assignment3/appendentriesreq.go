@@ -41,7 +41,7 @@ func (sm *StateMachine) AppendEntriesReqEventHandler ( event interface{} ) (acti
 				actions = append(actions, StateStore{term: sm.currentTerm, votedFor:sm.votedFor})
 				if ( (cmd.PrevLogTerm == 0) || ( cmd.PrevLogIndex < int64(len(sm.log)) && (sm.log[cmd.PrevLogIndex].Term == cmd.PrevLogTerm)) ) {
 					k:=0
-					//fmt.Printf("In appendentriesreq: prevlogindex->%v, No.of entries->%v\n", cmd.PrevLogIndex, len(cmd.Entries))
+					fmt.Printf("%v In appendentriesreq: Entries to be updated->%v\n",sm.serverId, cmd.Entries)
 					templog := make([]logEntry, int(int(cmd.PrevLogIndex)+1+len(cmd.Entries)))
 					for i:=0;i<int(cmd.PrevLogIndex)+1;i++ {
 						templog[i]=sm.log[i]
@@ -54,8 +54,8 @@ func (sm *StateMachine) AppendEntriesReqEventHandler ( event interface{} ) (acti
 					}
 					sm.log = templog
 
-					fmt.Printf("%v updated log: %v\n", sm.serverId, sm.log)
-					actions = append(actions, Send{peerId: cmd.LeaderId, ev: AppendEntriesRespEv{From: sm.serverId, Term: cmd.Term, Success: true}})
+					//fmt.Printf("%v updated log: %v\n", sm.serverId, sm.log)
+					actions = append(actions, Send{peerId: cmd.LeaderId, ev: AppendEntriesRespEv{From: sm.serverId, Term: cmd.Term, Success: true, Lastindex: int64(len(sm.log)-1)}})
 					if cmd.CommitIndex > sm.commitIndex {
 						if int64(len(sm.log)-1) < cmd.CommitIndex {
 							for i:=sm.commitIndex+int64(1);i<=int64(len(sm.log)-1);i++ {
@@ -72,11 +72,11 @@ func (sm *StateMachine) AppendEntriesReqEventHandler ( event interface{} ) (acti
 						}						
 					}
 				} else {
-					actions = append(actions, Send{peerId: cmd.LeaderId, ev: AppendEntriesRespEv{From: sm.serverId, Term: cmd.Term, Success: false}})
+					actions = append(actions, Send{peerId: cmd.LeaderId, ev: AppendEntriesRespEv{From: sm.serverId, Term: cmd.Term, Success: false, Lastindex: int64(len(sm.log)-1)}})
 				}
 				
 	   		} else {
-	   			actions = append(actions, Send{peerId: cmd.LeaderId, ev: AppendEntriesRespEv{From: sm.serverId, Term: sm.currentTerm, Success: false}})
+	   			actions = append(actions, Send{peerId: cmd.LeaderId, ev: AppendEntriesRespEv{From: sm.serverId, Term: sm.currentTerm, Success: false, Lastindex: int64(len(sm.log)-1)}})
 	   		}
 	   	case "candidate":
 	   			if sm.currentTerm <= cmd.Term {
@@ -88,7 +88,7 @@ func (sm *StateMachine) AppendEntriesReqEventHandler ( event interface{} ) (acti
 					actions = append(actions, StateStore{state: sm.currentState, term: sm.currentTerm, votedFor:sm.votedFor})
 					actions = sm.AppendEntriesReqEventHandler(event)
 				} else {
-					actions = append(actions, Send{peerId: cmd.LeaderId, ev: AppendEntriesRespEv{From: sm.serverId, Term: sm.currentTerm, Success: false}})
+					actions = append(actions, Send{peerId: cmd.LeaderId, ev: AppendEntriesRespEv{From: sm.serverId, Term: sm.currentTerm, Success: false, Lastindex: int64(len(sm.log)-1)}})
 				}	
 		default: println("Invalid state")		
 }

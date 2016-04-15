@@ -59,11 +59,10 @@ func TestRaftNodeBasic(t *testing.T) {
 }
 
 func makeRafts() []RaftNode {
-	//_ = RaftNodeConfig{peers, 100, "PersistentData", RandInt(150, 300), RandInt(75, 150)}
 	rnArr := make([]RaftNode, totRaftNodes)
 	for i := 0; i < totRaftNodes; i++ {
 		initRaftStateFile("PersistentData_" + strconv.Itoa((i+1)*100))
-		rnArr[i] = New(Config{peers, int64((i + 1) * 100), "PersistentData_" + strconv.Itoa((i+1)*100), 2000, 100}, jsonFile)
+		rnArr[i] = New(Config{peers, int64((i + 1) * 100), "PersistentData_" + strconv.Itoa((i+1)*100), 4000, 500}, jsonFile)
 		//fmt.Printf("sm_messaging = %v \n", rnArr[i].sm_messaging)
 		go rnArr[i].processEvents()
 	}
@@ -100,7 +99,6 @@ func getLeaderById(ldrId int64, rnArr []RaftNode) *RaftNode {
 }
 
 func initRaftStateFile(logDir string) {
-	//fmt.Printf("init raft state file : logDir - %v \n", logDir)
 	cleanup(logDir)
 	stateAttrsFP, err := log.Open(logDir + "/" + "statefile")
 	stateAttrsFP.RegisterSampleEntry(NodePers{})
@@ -109,7 +107,7 @@ func initRaftStateFile(logDir string) {
 	defer stateAttrsFP.Close()
 	stateAttrsFP.TruncateToEnd(0)
 	err1 := stateAttrsFP.Append(NodePers{0, 0, "follower"})
-	fmt.Println(err1)
+	//fmt.Println(err1)
 	assert(err1 == nil)
 	fmt.Println("file created successfully")
 }

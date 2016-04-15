@@ -11,7 +11,7 @@ type AppendEv struct {
 
 func (sm *StateMachine) AppendEventHandler ( event interface{} ) (actions []interface{}) {
 	cmd := event.(AppendEv)
-	fmt.Printf("%v\n", cmd)
+	fmt.Printf("Command to append on leader=> %v\n", cmd)
 	switch sm.currentState {
 		case "leader":
 			sm.log = append(sm.log, logEntry{Term: sm.currentTerm, command: cmd.Data})

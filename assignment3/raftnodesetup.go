@@ -241,9 +241,11 @@ func (rnode *RaftNode) SendHandler(obj Send) {
 	case AppendEv:
 		rnode.sm_messaging.Outbox() <- &cluster.Envelope{Pid: int(obj.peerId), Msg: AppendEv{Data: obj.ev.(AppendEv).Data}}
 	case AppendEntriesReqEv:
-		rnode.sm_messaging.Outbox() <- &cluster.Envelope{Pid: int(obj.peerId), Msg: AppendEntriesReqEv{Term: obj.ev.(AppendEntriesReqEv).Term, LeaderId: obj.ev.(AppendEntriesReqEv).LeaderId, PrevLogIndex: obj.ev.(AppendEntriesReqEv).PrevLogIndex, PrevLogTerm: obj.ev.(AppendEntriesReqEv).PrevLogTerm, Entries: obj.ev.(AppendEntriesReqEv).Entries, CommitIndex: obj.ev.(AppendEntriesReqEv).CommitIndex}}
+		// rnode.sm_messaging.Outbox() <- &cluster.Envelope{Pid: int(obj.peerId), Msg: AppendEntriesReqEv{Term: obj.ev.(AppendEntriesReqEv).Term, LeaderId: obj.ev.(AppendEntriesReqEv).LeaderId, PrevLogIndex: obj.ev.(AppendEntriesReqEv).PrevLogIndex, PrevLogTerm: obj.ev.(AppendEntriesReqEv).PrevLogTerm, Entries: obj.ev.(AppendEntriesReqEv).Entries, CommitIndex: obj.ev.(AppendEntriesReqEv).CommitIndex}}
+		rnode.sm_messaging.Outbox() <- &cluster.Envelope{Pid: int(obj.peerId), Msg: obj.ev.(AppendEntriesReqEv)}
+		fmt.Printf("%v New send handler %v\n", rnode.sm.serverId, obj.ev.(AppendEntriesReqEv).Entries)
 	case AppendEntriesRespEv:
-		rnode.sm_messaging.Outbox() <- &cluster.Envelope{Pid: int(obj.peerId), Msg: AppendEntriesRespEv{From: obj.ev.(AppendEntriesRespEv).From, Term: obj.ev.(AppendEntriesRespEv).Term, Success: obj.ev.(AppendEntriesRespEv).Success}}
+		rnode.sm_messaging.Outbox() <- &cluster.Envelope{Pid: int(obj.peerId), Msg: AppendEntriesRespEv{From: obj.ev.(AppendEntriesRespEv).From, Term: obj.ev.(AppendEntriesRespEv).Term, Success: obj.ev.(AppendEntriesRespEv).Success, Lastindex: obj.ev.(AppendEntriesRespEv).Lastindex}}
 	case VoteReqEv:
 		rnode.sm_messaging.Outbox() <- &cluster.Envelope{Pid: int(obj.peerId), Msg: VoteReqEv{Term: obj.ev.(VoteReqEv).Term, CandidateId: obj.ev.(VoteReqEv).CandidateId, LastLogIndex: obj.ev.(VoteReqEv).LastLogIndex, LastLogTerm: obj.ev.(VoteReqEv).LastLogTerm}}
 	case VoteRespEv:

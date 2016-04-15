@@ -7,7 +7,8 @@ import (
 type AppendEntriesRespEv struct {	
 		From int64
 		Term int64
-		Success bool	
+		Success bool
+		Lastindex int64	
 }
 
 func (sm *StateMachine) AppendEntriesRespEventHandler ( event interface{} ) (actions []interface{}) {
@@ -41,11 +42,14 @@ func (sm *StateMachine) AppendEntriesRespEventHandler ( event interface{} ) (act
 					}				
 				}
 			} else {
-				sm.nextIndex[ind] = int64(len(sm.log))
+				sm.nextIndex[ind] = int64(cmd.Lastindex+1)
+				sm.matchIndex[ind] = int64(cmd.Lastindex)
 				lastCommitIndex := sm.commitIndex
+				fmt.Printf("last commit index===>%v", lastCommitIndex)
 				temp := int64(1)
 				for i:=0;i<len(sm.peerIds);i++ {
 					if sm.matchIndex[i] > lastCommitIndex {
+						fmt.Printf("Dn't be here..!!")
 						for j:=0; j<len(sm.peerIds); j++ {
 							if j!=i && sm.matchIndex[j]>=sm.matchIndex[i] {
 								temp = temp + int64(1)
@@ -61,7 +65,7 @@ func (sm *StateMachine) AppendEntriesRespEventHandler ( event interface{} ) (act
 					if lastCommitIndex >=0 {
 					if lastCommitIndex > sm.commitIndex && sm.log[lastCommitIndex].Term == sm.currentTerm {
 						for i:=sm.commitIndex+int64(1);i<=lastCommitIndex;i++ {
-							fmt.Printf("%v In appendentriesreq: Commit data->%v\n", sm.serverId, sm.log[i].command)
+							fmt.Printf("%v In appendentriesresp: Commit data->%v\n", sm.serverId, sm.log[i].command)
 							actions = append(actions, Commit{index: i, command: sm.log[i].command, err: nil})
 						}
 						sm.commitIndex = lastCommitIndex

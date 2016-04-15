@@ -29,7 +29,7 @@ func (sm *StateMachine) VoteRespEventHandler ( event interface{} ) (actions []in
 					actions = append(actions, Alarm{t: sm.HeartbeatTimeout})
 					for i:=0;i<len(sm.peerIds);i++ {
 						sm.nextIndex[i] = int64(len(sm.log))
-						sm.matchIndex[i] = 0
+						sm.matchIndex[i] = -1
 						if (len(sm.log)-2)<0 {
 							actions = append(actions, Send{peerId: sm.peerIds[i], ev: AppendEntriesReqEv{Term: sm.currentTerm, LeaderId: sm.serverId, PrevLogIndex: int64(-1), PrevLogTerm: 0, Entries: nil, CommitIndex: sm.commitIndex}})				
 						} else {
