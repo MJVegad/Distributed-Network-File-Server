@@ -33,7 +33,7 @@ func (rn *RaftNode) Get(index int) (err1 error, data []byte) {
 	defer lg.Close()
 	val,err1 := lg.Get(int64(index))
 	if err1==nil {
-		data = val.(logEntry).command
+		data = val.(logEntry).Command
 		return err1,data
 	} else {
 		return err1, data

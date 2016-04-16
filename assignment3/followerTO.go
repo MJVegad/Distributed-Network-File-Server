@@ -7,7 +7,7 @@ import (
 
 func TestFollowerTimeout (t *testing.T) {
 	//excpectedPeerIds := []int64{2,3,4,5}
-	sm := StateMachine {serverId: int64(1), peerIds: []int64{int64(2),int64(3),int64(4),int64(5)}, majority: int64(3), commitIndex: int64(1), nextIndex: []int64{int64(2),int64(2),int64(2),int64(2)}, matchIndex: []int64{int64(2),int64(2),int64(2),int64(2)}, log: []logEntry{logEntry{Term: 1, command: []byte("add")},logEntry{Term: 2, command: []byte("disp")}}, currentTerm: 2, votedFor: 1, currentState: "follower", totalvotes: 3}
+	sm := StateMachine {serverId: int64(1), peerIds: []int64{int64(2),int64(3),int64(4),int64(5)}, majority: int64(3), commitIndex: int64(1), nextIndex: []int64{int64(2),int64(2),int64(2),int64(2)}, matchIndex: []int64{int64(2),int64(2),int64(2),int64(2)}, log: []logEntry{logEntry{Term: 1, Command: []byte("add")},logEntry{Term: 2, Command: []byte("disp")}}, currentTerm: 2, votedFor: 1, currentState: "follower", totalvotes: 3}
 	result := sm.ProcessEvent(TimeoutEv{})
 	expect1 (t, result, "candidate", 3, 1, 100)
 	
