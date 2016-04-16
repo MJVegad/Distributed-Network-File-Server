@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+//	"fmt"
 	"errors"
 )
 
@@ -11,20 +11,20 @@ type AppendEv struct {
 
 func (sm *StateMachine) AppendEventHandler ( event interface{} ) (actions []interface{}) {
 	cmd := event.(AppendEv)
-	fmt.Printf("Command to append on leader=> %v\n", cmd)
+	//fmt.Printf("Command to append on leader=> %v\n", cmd)
 	switch sm.currentState {
 		case "leader":
 			sm.log = append(sm.log, logEntry{Term: sm.currentTerm, command: cmd.Data})
 			actions = append(actions, LogStore{index: int64(len(sm.log)-1), command: sm.log[int64(len(sm.log)-1)]})
-			/*for _, pid := range sm.peerIds {
-				actions = append(actions, Send{peerId: pid, ev: AppendEntriesReqEv{Term: sm.currentTerm, leaderId: sm.serverId, prevLogIndex: int64(len(sm.log)-2), prevLogTerm: sm.log[int64(len(sm.log)-2)].Term, entries: sm.log[int64(len(sm.log)-1):] , commitIndex: sm.commitIndex}})
-			}*/
+			//fmt.Printf("leader->%v, log->%v\n", sm.serverId, sm.log)
 			for i:=0;i<len(sm.peerIds);i++ {
 				if sm.serverId != sm.peerIds[i] {
 					if sm.nextIndex[i] != 0 {
+					//fmt.Printf("leader->%v, log entries sent->%v\n", sm.serverId, sm.log[sm.nextIndex[i]:])	
 					actions = append(actions, Send{peerId: sm.peerIds[i], ev: AppendEntriesReqEv{Term: sm.currentTerm, LeaderId: sm.serverId, PrevLogIndex: sm.nextIndex[i]-1, PrevLogTerm: sm.log[sm.nextIndex[i]-1].Term, Entries: sm.log[sm.nextIndex[i]:] , CommitIndex: sm.commitIndex}})
 				} else {
-					actions = append(actions, Send{peerId: sm.peerIds[i], ev: AppendEntriesReqEv{Term: sm.currentTerm, LeaderId: sm.serverId, PrevLogIndex: sm.nextIndex[i]-1, PrevLogTerm: 0, Entries: nil , CommitIndex: sm.commitIndex}})
+					//fmt.Printf("leader->%v, log entries sent->%v\n", sm.serverId, sm.log[sm.nextIndex[i]:])
+					actions = append(actions, Send{peerId: sm.peerIds[i], ev: AppendEntriesReqEv{Term: sm.currentTerm, LeaderId: sm.serverId, PrevLogIndex: sm.nextIndex[i]-1, PrevLogTerm: 0, Entries: sm.log[sm.nextIndex[i]:] , CommitIndex: sm.commitIndex}})
 				}	
 				}
 			}

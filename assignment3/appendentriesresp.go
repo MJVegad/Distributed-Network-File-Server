@@ -13,7 +13,7 @@ type AppendEntriesRespEv struct {
 
 func (sm *StateMachine) AppendEntriesRespEventHandler ( event interface{} ) (actions []interface{}) {
 	cmd := event.(AppendEntriesRespEv)
-	fmt.Printf("%v\n", cmd)
+	//fmt.Printf("%v\n", cmd)
 	switch sm.currentState {
 		case "leader":
 			var ind int
@@ -45,16 +45,16 @@ func (sm *StateMachine) AppendEntriesRespEventHandler ( event interface{} ) (act
 				sm.nextIndex[ind] = int64(cmd.Lastindex+1)
 				sm.matchIndex[ind] = int64(cmd.Lastindex)
 				lastCommitIndex := sm.commitIndex
-				fmt.Printf("last commit index===>%v", lastCommitIndex)
+				//fmt.Printf("last commit index===>%v", lastCommitIndex)
 				temp := int64(1)
 				for i:=0;i<len(sm.peerIds);i++ {
 					if sm.matchIndex[i] > lastCommitIndex {
-						fmt.Printf("Dn't be here..!!")
+						//fmt.Printf("Dn't be here..!!")
 						for j:=0; j<len(sm.peerIds); j++ {
 							if j!=i && sm.matchIndex[j]>=sm.matchIndex[i] {
 								temp = temp + int64(1)
 							}		
-							if temp >= sm.majority && sm.matchIndex[i] > lastCommitIndex {
+							if temp >= sm.majority-1 && sm.matchIndex[i] > lastCommitIndex {
 								lastCommitIndex = sm.matchIndex[i]
 								break
 							}				
@@ -65,7 +65,7 @@ func (sm *StateMachine) AppendEntriesRespEventHandler ( event interface{} ) (act
 					if lastCommitIndex >=0 {
 					if lastCommitIndex > sm.commitIndex && sm.log[lastCommitIndex].Term == sm.currentTerm {
 						for i:=sm.commitIndex+int64(1);i<=lastCommitIndex;i++ {
-							fmt.Printf("%v In appendentriesresp: Commit data->%v\n", sm.serverId, sm.log[i].command)
+							fmt.Printf("Leader->%v, Commit data->%v\n", sm.serverId, sm.log[i].command)
 							actions = append(actions, Commit{index: i, command: sm.log[i].command, err: nil})
 						}
 						sm.commitIndex = lastCommitIndex

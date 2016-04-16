@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 	"fmt"
-	"runtime"
+	//"runtime"
 )
 
 
@@ -23,7 +23,7 @@ func prepareRaftNodeConfigObj() {
 }
 
 func TestRaftNodeBasic(t *testing.T) {
-	runtime.GOMAXPROCS(1000)
+	//runtime.GOMAXPROCS(1000)
 	prepareRaftNodeConfigObj()
 	rnArr := makeRafts()
 
@@ -40,7 +40,7 @@ func TestRaftNodeBasic(t *testing.T) {
 	ldr := getLeaderById(ldrId, rnArr)
 
 	ldr.Append([]byte("foo"))
-	time.Sleep(10 * time.Second)
+	time.Sleep(20 * time.Second)
 	for _, rn := range rnArr {
 		select {
 		case ci := <-rn.CommitChannel():
@@ -85,7 +85,7 @@ func getLeader(rnArr []RaftNode) int64 {
 			break
 		}
 	}
-	fmt.Printf("getLeader: Leader id = %v \n", ldrId)
+	//fmt.Printf("getLeader: Leader id = %v \n", ldrId)
 	return ldrId
 }
 

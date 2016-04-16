@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	//"fmt"
 )
 
 type VoteRespEv struct {	
@@ -11,7 +11,7 @@ type VoteRespEv struct {
 
 func (sm *StateMachine) VoteRespEventHandler ( event interface{} ) (actions []interface{}) {
 	cmd := event.(VoteRespEv)
-	fmt.Printf("%v\n", cmd)
+	//fmt.Printf("%v\n", cmd)
 	switch sm.currentState {
 		case "leader":
 		case "follower":

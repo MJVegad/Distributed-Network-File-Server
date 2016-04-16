@@ -7,7 +7,7 @@ import (
 	"math"
 	"time"
 	"fmt"
-	"reflect"
+	//"reflect"
 )
 
 type CommitInfo struct {
@@ -54,38 +54,6 @@ type RaftNode struct {
 	timer *time.Timer
 }
 
-/*func (rn *RaftNode) Append(data []byte) {
-	rn.eventch <- AppendEv{data: data}
-}*/
-
-/*func (rn *RaftNode) processEvents() {
-	for {
-		var ev interface{}
-		select {
-		case ev = <-rn.eventch:
-		case envelop := <-rn.sm_messaging.Inbox():
-			switch envelop.Msg.(type) {
-			case AppendEv:
-				ev = AppendEv{Data: envelop.Msg.(AppendEv).Data}
-			case AppendEntriesReqEv:
-				ev = AppendEntriesReqEv{Term: envelop.Msg.(AppendEntriesReqEv).Term, LeaderId: envelop.Msg.(AppendEntriesReqEv).LeaderId, PrevLogIndex: envelop.Msg.(AppendEntriesReqEv).PrevLogIndex, PrevLogTerm: envelop.Msg.(AppendEntriesReqEv).PrevLogTerm, Entries: envelop.Msg.(AppendEntriesReqEv).Entries, CommitIndex: envelop.Msg.(AppendEntriesReqEv).CommitIndex}
-			case AppendEntriesRespEv:
-				ev = AppendEntriesRespEv{From: envelop.Msg.(AppendEntriesRespEv).From, Term: envelop.Msg.(AppendEntriesRespEv).Term, Success: envelop.Msg.(AppendEntriesRespEv).Success}
-			case VoteReqEv:
-				ev = VoteReqEv{Term: envelop.Msg.(VoteReqEv).Term, CandidateId: envelop.Msg.(VoteReqEv).CandidateId, LastLogIndex: envelop.Msg.(VoteReqEv).LastLogIndex, LastLogTerm: envelop.Msg.(VoteReqEv).LastLogTerm}
-			case VoteRespEv:
-				ev = VoteRespEv{Term: envelop.Msg.(VoteRespEv).Term, VoteGranted: envelop.Msg.(VoteRespEv).VoteGranted}
-			}
-		case <-rn.timer.C:
-			{
-				ev = TimeoutEv{}
-			}
-
-		}
-		actions := rn.sm.ProcessEvent(ev)
-		rn.doActions(actions)
-	}
-}*/
 
 func (rn *RaftNode) processEvents() {
 	for {
@@ -97,6 +65,7 @@ func (rn *RaftNode) processEvents() {
 			case AppendEv:
 				rn.eventch <- envelop.Msg.(AppendEv)
 			case AppendEntriesReqEv:
+				fmt.Printf("follower->%v, received log entries->%v\n",rn.sm.serverId, envelop.Msg.(AppendEntriesReqEv).Entries)
 				rn.eventch <- envelop.Msg.(AppendEntriesReqEv)
 			case AppendEntriesRespEv:
 				rn.eventch <- envelop.Msg.(AppendEntriesRespEv)
@@ -105,7 +74,7 @@ func (rn *RaftNode) processEvents() {
 			case VoteRespEv:
 				rn.eventch <- envelop.Msg.(VoteRespEv)
 			}
-			fmt.Printf("%v received message %v\n", rn.sm.serverId, envelop.Msg)
+			//fmt.Printf("%v received message %v\n", rn.sm.serverId, envelop.Msg)
 			continue
 		case <-rn.timer.C:
 			{
@@ -234,7 +203,7 @@ func (rnode *RaftNode) CommitHandler(obj Commit) {
 }
 
 func (rnode *RaftNode) SendHandler(obj Send) {
-	fmt.Printf("%v In send handler: %v, %v \n", rnode.Id(), reflect.TypeOf(obj.ev), obj)
+	//fmt.Printf("%v In send handler: %v, %v \n", rnode.Id(), reflect.TypeOf(obj.ev), obj)
 	switch obj.ev.(type) {
 	case TimeoutEv:
 		rnode.sm_messaging.Outbox() <- &cluster.Envelope{Pid: int(obj.peerId), Msg: TimeoutEv{}}
@@ -242,8 +211,9 @@ func (rnode *RaftNode) SendHandler(obj Send) {
 		rnode.sm_messaging.Outbox() <- &cluster.Envelope{Pid: int(obj.peerId), Msg: AppendEv{Data: obj.ev.(AppendEv).Data}}
 	case AppendEntriesReqEv:
 		// rnode.sm_messaging.Outbox() <- &cluster.Envelope{Pid: int(obj.peerId), Msg: AppendEntriesReqEv{Term: obj.ev.(AppendEntriesReqEv).Term, LeaderId: obj.ev.(AppendEntriesReqEv).LeaderId, PrevLogIndex: obj.ev.(AppendEntriesReqEv).PrevLogIndex, PrevLogTerm: obj.ev.(AppendEntriesReqEv).PrevLogTerm, Entries: obj.ev.(AppendEntriesReqEv).Entries, CommitIndex: obj.ev.(AppendEntriesReqEv).CommitIndex}}
+		fmt.Printf("Leader->%v, Sent log entries->%v\n",rnode.sm.serverId, obj.ev.(AppendEntriesReqEv).Entries)
 		rnode.sm_messaging.Outbox() <- &cluster.Envelope{Pid: int(obj.peerId), Msg: obj.ev.(AppendEntriesReqEv)}
-		fmt.Printf("%v New send handler %v\n", rnode.sm.serverId, obj.ev.(AppendEntriesReqEv).Entries)
+		//fmt.Printf("%v New send handler %v\n", rnode.sm.serverId, obj.ev.(AppendEntriesReqEv).Entries)
 	case AppendEntriesRespEv:
 		rnode.sm_messaging.Outbox() <- &cluster.Envelope{Pid: int(obj.peerId), Msg: AppendEntriesRespEv{From: obj.ev.(AppendEntriesRespEv).From, Term: obj.ev.(AppendEntriesRespEv).Term, Success: obj.ev.(AppendEntriesRespEv).Success, Lastindex: obj.ev.(AppendEntriesRespEv).Lastindex}}
 	case VoteReqEv:
