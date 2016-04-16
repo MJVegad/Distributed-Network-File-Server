@@ -31,10 +31,11 @@ func (sm *StateMachine) AppendEntriesRespEventHandler ( event interface{} ) (act
 					actions = append(actions, Alarm{t: int64(ElectionTimeoutGenerator(int(sm.ElectionTimeout), int(2*sm.ElectionTimeout)))})
 					actions = append(actions, StateStore{state: sm.currentState, term: sm.currentTerm, votedFor:sm.votedFor})
 				} else {
-					sm.nextIndex[ind] = sm.nextIndex[ind]-int64(1)
-					if sm.nextIndex[ind] < 0 {
-						actions = append(actions, Send{peerId: cmd.From, ev: AppendEntriesReqEv{Term: sm.currentTerm, LeaderId: sm.serverId, PrevLogIndex: -1, PrevLogTerm: 0, Entries: nil, CommitIndex: sm.commitIndex}})
-					} else if sm.nextIndex[ind] == 0 {
+					//sm.nextIndex[ind] = sm.nextIndex[ind]-int64(1)
+					//if sm.nextIndex[ind] < 0 {
+					//	actions = append(actions, Send{peerId: cmd.From, ev: AppendEntriesReqEv{Term: sm.currentTerm, LeaderId: sm.serverId, PrevLogIndex: -1, PrevLogTerm: 0, Entries: nil, CommitIndex: sm.commitIndex}})
+					//} else if sm.nextIndex[ind] == 0 {
+					if sm.nextIndex[ind]-int64(1) < 0 {
 						actions = append(actions, Send{peerId: cmd.From, ev: AppendEntriesReqEv{Term: sm.currentTerm, LeaderId: sm.serverId, PrevLogIndex: -1, PrevLogTerm: 0, Entries: sm.log[0:], CommitIndex: sm.commitIndex}})
 					} else {
 						//fmt.Printf("%v Inside AppendEntriesResp: ind->%v, logindex->%v\n", sm.serverId, ind, sm.nextIndex[ind]-int64(1))
@@ -65,8 +66,8 @@ func (sm *StateMachine) AppendEntriesRespEventHandler ( event interface{} ) (act
 					if lastCommitIndex >=0 {
 					if lastCommitIndex > sm.commitIndex && sm.log[lastCommitIndex].Term == sm.currentTerm {
 						for i:=sm.commitIndex+int64(1);i<=lastCommitIndex;i++ {
-							fmt.Printf("Leader->%v, Commit data->%v\n", sm.serverId, sm.log[i].command)
-							actions = append(actions, Commit{index: i, command: sm.log[i].command, err: nil})
+							fmt.Printf("Leader->%v, Commit data->%v\n", sm.serverId, sm.log[i].Command)
+							actions = append(actions, Commit{index: i, command: sm.log[i].Command, err: nil})
 						}
 						sm.commitIndex = lastCommitIndex
 					}

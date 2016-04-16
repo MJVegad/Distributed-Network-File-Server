@@ -1,7 +1,7 @@
 package main
 
 import (
-	//"fmt"
+	"fmt"
 )
 
 type TimeoutEv struct {
@@ -15,10 +15,10 @@ func (sm *StateMachine) TimeoutEventHandler ( event interface{} ) (actions []int
 		case "leader":
 			for i:=0;i<len(sm.peerIds);i++ {
 				if (sm.nextIndex[i]-1) < 0 {
-					//fmt.Printf("%v Inside Timeout if: logindex->%v\n", sm.serverId, sm.nextIndex[i])
+					fmt.Printf("%v Inside Timeout if: logindex->%v\n", sm.serverId, sm.nextIndex[i])
 					actions = append(actions, Send{peerId: sm.peerIds[i], ev: AppendEntriesReqEv{Term: sm.currentTerm, LeaderId: sm.serverId, PrevLogIndex: sm.nextIndex[i]-1, PrevLogTerm: 0, Entries: sm.log[sm.nextIndex[i]:], CommitIndex: sm.commitIndex}})	
 				} else {
-					//fmt.Printf("%v Inside Timeout else: logindex->%v\n", sm.serverId, sm.nextIndex[i]-1)
+					fmt.Printf("%v Inside Timeout else: logindex->%v\n", sm.serverId, sm.nextIndex[i]-1)
 					actions = append(actions, Send{peerId: sm.peerIds[i], ev: AppendEntriesReqEv{Term: sm.currentTerm, LeaderId: sm.serverId, PrevLogIndex: sm.nextIndex[i]-1, PrevLogTerm: sm.log[sm.nextIndex[i]-1].Term, Entries: sm.log[sm.nextIndex[i]:], CommitIndex: sm.commitIndex}})
 				}
 			}

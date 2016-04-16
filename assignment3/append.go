@@ -14,7 +14,7 @@ func (sm *StateMachine) AppendEventHandler ( event interface{} ) (actions []inte
 	//fmt.Printf("Command to append on leader=> %v\n", cmd)
 	switch sm.currentState {
 		case "leader":
-			sm.log = append(sm.log, logEntry{Term: sm.currentTerm, command: cmd.Data})
+			sm.log = append(sm.log, logEntry{Term: sm.currentTerm, Command: cmd.Data})
 			actions = append(actions, LogStore{index: int64(len(sm.log)-1), command: sm.log[int64(len(sm.log)-1)]})
 			//fmt.Printf("leader->%v, log->%v\n", sm.serverId, sm.log)
 			for i:=0;i<len(sm.peerIds);i++ {

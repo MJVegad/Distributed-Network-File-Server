@@ -6,7 +6,7 @@ import (
 
 type logEntry struct {
 		Term int64
-		command []byte
+		Command []byte
 }
 
 

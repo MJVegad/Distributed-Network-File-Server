@@ -51,6 +51,7 @@ type RaftNode struct {
 	eventch      chan interface{}
 	//timeoutch    chan TimeoutEv
 	commitch     chan CommitInfo
+	endch chan bool
 	timer *time.Timer
 }
 
@@ -80,6 +81,8 @@ func (rn *RaftNode) processEvents() {
 			{
 				ev = TimeoutEv{}
 			}
+		case <-rn.endch:
+				return
 
 		}
 		actions := rn.sm.ProcessEvent(ev)
@@ -151,6 +154,7 @@ func New(config Config, jsonFile string) (rnode RaftNode) {
 
 	rnode.eventch = make(chan interface{}, 1000)
 	rnode.commitch = make(chan CommitInfo, 1000)
+	rnode.endch = make(chan bool)
 	//rnode.timeoutch = make(chan TimeoutEv)
 	//rnode.resettimer = 0
 
@@ -165,9 +169,12 @@ func New(config Config, jsonFile string) (rnode RaftNode) {
 	gob.Register(VoteRespEv{})
 
 	rnode.timer = time.NewTimer(time.Duration(config.ElectionTimeout)*time.Millisecond) 
-
-	rnode.sm_messaging, _ = cluster.New(int(config.Id), jsonFile)
-
+	var err3 error
+	rnode.sm_messaging, err3 = cluster.New(int(config.Id), jsonFile)
+	
+	if err3!=nil {
+		fmt.Printf("Error in sm_messaging.")
+	}
 	return
 }
 
@@ -199,6 +206,7 @@ func (rnode *RaftNode) AlarmHandler(obj Alarm) {
 func (rnode *RaftNode) CommitHandler(obj Commit) {
 	//fmt.Printf("%v In CommitHandler: %v\n", rnode.sm.serverId, obj)
 	t1 := CommitInfo{Data: obj.command, Index: obj.index, Err: obj.err}
+	fmt.Printf("%v -> Commitchannel: %v\n", rnode.sm.serverId, t1)
 	rnode.commitch <- t1
 }
 
@@ -236,6 +244,7 @@ func (rn *RaftNode) doActions(actions []interface{}) {
 			rn.AlarmHandler(action.(Alarm))
 		case Commit:
 			rn.CommitHandler(action.(Commit))
+			fmt.Printf("Node->%v, data to commit: %v -> %v\n", rn.sm.serverId, action.(Commit).index, action.(Commit).command)
 		case Send:
 			rn.SendHandler(action.(Send))
 		default:

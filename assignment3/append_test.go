@@ -5,8 +5,8 @@ import (
 	"github.com/cs733-iitb/log"
 	"os"
 	"strconv"
-	"testing"
-	"time"
+	//"testing"
+	//"time"
 	"fmt"
 	//"runtime"
 )
@@ -22,7 +22,7 @@ func prepareRaftNodeConfigObj() {
 	peers = []NetConfig{NetConfig{100, "localhost", 8001}, NetConfig{200, "localhost", 8002}, NetConfig{300, "localhost", 8003}, NetConfig{400, "localhost", 8004}, NetConfig{500, "localhost", 8005}}
 }
 
-func TestRaftNodeBasic(t *testing.T) {
+/*func TestRaftNodeBasic(t *testing.T) {
 	//runtime.GOMAXPROCS(1000)
 	prepareRaftNodeConfigObj()
 	rnArr := makeRafts()
@@ -40,7 +40,7 @@ func TestRaftNodeBasic(t *testing.T) {
 	ldr := getLeaderById(ldrId, rnArr)
 
 	ldr.Append([]byte("foo"))
-	time.Sleep(20 * time.Second)
+	time.Sleep(10 * time.Second)
 	for _, rn := range rnArr {
 		select {
 		case ci := <-rn.CommitChannel():
@@ -55,8 +55,9 @@ func TestRaftNodeBasic(t *testing.T) {
 			t.Fatal("Expected message on all nodes")
 		}
 	}
-	fmt.Println("test case executed")
-}
+	fmt.Println("single append testcase passed.\n")
+	SystemShutdown(rnArr, nil)
+}*/
 
 func makeRafts() []RaftNode {
 	rnArr := make([]RaftNode, totRaftNodes)

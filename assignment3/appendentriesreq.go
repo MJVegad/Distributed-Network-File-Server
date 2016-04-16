@@ -59,14 +59,14 @@ func (sm *StateMachine) AppendEntriesReqEventHandler ( event interface{} ) (acti
 					if cmd.CommitIndex > sm.commitIndex {
 						if int64(len(sm.log)-1) < cmd.CommitIndex {
 							for i:=sm.commitIndex+int64(1);i<=int64(len(sm.log)-1);i++ {
-								fmt.Printf("Follower->%v, Commit data->%v\n", sm.serverId, sm.log[i].command)
-								actions = append(actions, Commit{index: i, command: sm.log[i].command, err: nil})
+								fmt.Printf("Follower->%v, Commit data->%v\n", sm.serverId, sm.log[i].Command)
+								actions = append(actions, Commit{index: i, command: sm.log[i].Command, err: nil})
 							}
 							sm.commitIndex = int64(len(sm.log)-1)
 						} else {
 							for i:=sm.commitIndex+int64(1);i<=cmd.CommitIndex;i++ {
 									//fmt.Printf("%v In appendentriesreq: Commit data->%v\n", sm.serverId, sm.log[i].command)
-								actions = append(actions, Commit{index: i, command: sm.log[i].command, err: nil})
+								actions = append(actions, Commit{index: i, command: sm.log[i].Command, err: nil})
 							}
 							sm.commitIndex = cmd.CommitIndex
 						}						
