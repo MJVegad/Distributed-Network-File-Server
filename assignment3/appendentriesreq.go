@@ -41,7 +41,7 @@ func (sm *StateMachine) AppendEntriesReqEventHandler(event interface{}) (actions
 			actions = append(actions, StateStore{term: sm.currentTerm, votedFor: sm.votedFor})
 			if (cmd.PrevLogTerm == 0) || (cmd.PrevLogIndex < int64(len(sm.log)) && (sm.log[cmd.PrevLogIndex].Term == cmd.PrevLogTerm)) {
 				k := 0
-				//fmt.Printf("%v In appendentriesreq: Entries to be updated->%v\n",sm.serverId, cmd.Entries)
+				fmt.Printf("%v In appendentriesreq: Entries to be updated->%v\n",sm.serverId, cmd.Entries)
 				templog := make([]logEntry, int(int(cmd.PrevLogIndex)+1+len(cmd.Entries)))
 				for i := 0; i < int(cmd.PrevLogIndex)+1; i++ {
 					templog[i] = sm.log[i]

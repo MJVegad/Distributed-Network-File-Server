@@ -43,6 +43,7 @@ func (sm *StateMachine) VoteReqEventHandler(event interface{}) (actions []interf
 			if (len(sm.log)-1 < 0) || ((sm.log[len(sm.log)-1].Term < cmd.LastLogTerm) || (sm.log[len(sm.log)-1].Term == cmd.LastLogTerm && int64(len(sm.log)-1) <= cmd.LastLogIndex)) {
 				sm.votedFor = cmd.CandidateId
 				temp = true
+				//fmt.Printf("%v granted vote to %v, term:%v\n",sm.serverId,sm.votedFor,cmd.Term)
 				actions = append(actions, Send{cmd.CandidateId, VoteRespEv{Term: sm.currentTerm, VoteGranted: true}})
 				actions = append(actions, Alarm{t: int64(ElectionTimeoutGenerator(int(sm.ElectionTimeout), int(2*sm.ElectionTimeout)))})
 			} else {

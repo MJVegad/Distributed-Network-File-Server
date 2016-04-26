@@ -55,6 +55,8 @@ type RaftNode struct {
 	timer    *time.Timer
 }
 
+var lg *log.Log
+
 func (rn *RaftNode) processEvents() {
 	for {
 		var ev interface{}
@@ -107,10 +109,11 @@ func New(config Config, jsonFile string) (rnode RaftNode) {
 	rnode.sm.commitIndex = -1
 
 	rnode.logfile = config.LogDir + "/" + "logfile"
-	lg, err := log.Open(rnode.logfile)
+	lg, _ = log.Open(rnode.logfile)
+	//fmt.Printf("type of log:\n",reflect.TypeOf(lg))
 	lg.RegisterSampleEntry(logEntry{})
-	assert(err == nil)
-	defer lg.Close()
+	//assert(err == nil)
+	//defer lg.Close()
 	if lg.GetLastIndex() == -1 {
 		rnode.sm.log = []logEntry{}
 	} else {
@@ -189,10 +192,10 @@ func (rnode *RaftNode) StateStoreHandler(obj StateStore) {
 
 func (rnode *RaftNode) LogStoreHandler(obj LogStore) {
 	//fmt.Printf("LogstoreBegin: index->%d, command->%v\n", obj.index, obj.command)
-	lg, err := log.Open(rnode.logfile)
-	lg.RegisterSampleEntry(logEntry{})
-	assert(err == nil)
-	defer lg.Close()
+	//lg, err := log.Open(rnode.logfile)
+	//lg.RegisterSampleEntry(logEntry{})
+	//assert(err == nil)
+	//defer lg.Close()
 	lg.TruncateToEnd(int64(obj.index))
 	lg.Append(obj.command)
 	//fmt.Printf("LogstoreEnd: index->%d, command->%v\n", obj.index, obj.command)
@@ -205,8 +208,8 @@ func (rnode *RaftNode) AlarmHandler(obj Alarm) {
 func (rnode *RaftNode) CommitHandler(obj Commit) {
 	//fmt.Printf("%v In CommitHandler: %v\n", rnode.sm.serverId, obj)
 	t1 := CommitInfo{Data: obj.command, Index: obj.index, Err: obj.err}
-	//fmt.Printf("On %v -> Commitchannel: %v\n", rnode.sm.serverId, t1.Data)
 	rnode.commitch <- t1
+	fmt.Printf("On %v -> Commitchannel: %v\n", rnode.sm.serverId, t1.Err)
 }
 
 func (rnode *RaftNode) SendHandler(obj Send) {

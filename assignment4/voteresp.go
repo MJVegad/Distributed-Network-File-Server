@@ -21,8 +21,12 @@ func (sm *StateMachine) VoteRespEventHandler(event interface{}) (actions []inter
 			actions = append(actions, StateStore{state: sm.currentState, term: sm.currentTerm, votedFor: sm.votedFor})
 		}
 	case "candidate":
+		if cmd.Term < sm.currentTerm {
+			return actions
+		}
 		if cmd.VoteGranted == true {
 			sm.totalvotes = sm.totalvotes + 1
+			//fmt.Printf("sm.totalvotes:%v\n",sm.totalvotes)
 			if sm.totalvotes >= sm.majority {
 				sm.currentState = "leader"
 				fmt.Printf("Leader elected->%v\n", sm.serverId)

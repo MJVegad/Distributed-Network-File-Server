@@ -31,6 +31,7 @@ func (sm *StateMachine) TimeoutEventHandler(event interface{}) (actions []interf
 		actions = append(actions, StateStore{state: sm.currentState, term: sm.currentTerm, votedFor: sm.votedFor})
 		actions = append(actions, Alarm{t: int64(ElectionTimeoutGenerator(int(sm.ElectionTimeout), int(2*sm.ElectionTimeout)))})
 		for _, pid := range sm.peerIds {
+			//		fmt.Printf("VOte request sent to:%v,term:%v\n",pid,sm.currentTerm)
 			if (len(sm.log) - 1) < 0 {
 				actions = append(actions, Send{peerId: pid, ev: VoteReqEv{Term: sm.currentTerm, CandidateId: sm.serverId, LastLogIndex: 0, LastLogTerm: 0}})
 			} else {
@@ -44,7 +45,9 @@ func (sm *StateMachine) TimeoutEventHandler(event interface{}) (actions []interf
 		sm.votedFor = sm.serverId
 		actions = append(actions, StateStore{state: sm.currentState, term: sm.currentTerm, votedFor: sm.votedFor})
 		actions = append(actions, Alarm{t: int64(ElectionTimeoutGenerator(int(sm.ElectionTimeout), int(2*sm.ElectionTimeout)))})
+
 		for _, pid := range sm.peerIds {
+			//	fmt.Printf("totalvotes:%v\n",sm.totalvotes)
 			if (len(sm.log) - 1) < 0 {
 				actions = append(actions, Send{peerId: pid, ev: VoteReqEv{Term: sm.currentTerm, CandidateId: sm.serverId, LastLogIndex: 0, LastLogTerm: 0}})
 			} else {

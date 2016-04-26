@@ -113,7 +113,7 @@ func serve(conn *net.TCPConn, rn RaftNode, clientId int64, connch map[int64]chan
 			}
 		}
 
-		//fmt.Printf("Inside serve, msg:%c\n",msg.Kind)
+		fmt.Printf("Inside serve, msg:%c\n", msg.Kind)
 		if msg.Kind != 'r' {
 			tempmsg := Rnmsg{clientId, msg}
 			rnmsgbytes, err1 := encode(tempmsg)
@@ -122,11 +122,12 @@ func serve(conn *net.TCPConn, rn RaftNode, clientId int64, connch map[int64]chan
 				return
 			}
 			rn.Append(rnmsgbytes)
+			//fmt.Printf("waiting for response for client %v..!!\n", clientId)
 			dmsg := <-connch[clientId]
 			//response := fs.ProcessMsg(dmsg,ff,gversion)
 			//				fmt.Printf("Received on client channel -> %v, msg kind -> %v\n",clientId, dmsg.Kind)
 			if dmsg.Kind == 'P' {
-				fmt.Printf("Voted For in serve->%v\n", rn.sm.votedFor)
+				//fmt.Printf("Voted For in serve->%v\n", rn.sm.votedFor)
 				for j := 0; j < len(temp.Peers); j++ {
 					if temp.Peers[j].Id == rn.sm.votedFor {
 						reply(conn, dmsg, temp.Peers[j].ServerAddress)
@@ -134,9 +135,9 @@ func serve(conn *net.TCPConn, rn RaftNode, clientId int64, connch map[int64]chan
 				}
 
 			} else {
-				//				fmt.Printf("On %v commit channel wait over %v\n",clientId, dmsg)
-				response := fs.ProcessMsg(dmsg, ff, gversion)
-				if !reply(conn, response, "") {
+				//fmt.Printf("msg kind not P on client %v\n", clientId)
+			//	response := fs.ProcessMsg(dmsg, ff, gversion)
+				if !reply(conn, dmsg, "") {
 					conn.Close()
 					break
 				}
@@ -152,29 +153,38 @@ func serve(conn *net.TCPConn, rn RaftNode, clientId int64, connch map[int64]chan
 	}
 }
 
-func (rn *RaftNode) listenToCommitChannels(connch map[int64]chan *fs.Msg) {
+func (rn *RaftNode) listenToCommitChannels(connch map[int64]chan *fs.Msg, ff *fs.FS, gversion *int) {
 	for {
+		//fmt.Printf("for begins...!!!\n")
 		ci := <-rn.CommitChannel()
-		//	fmt.Printf("In serve, ci->%v\n", ci)
+		//fmt.Printf("In serve, ci->%v\n", ci)
 		rnmsgcc, err := decode(ci.Data)
 		if ci.Err != nil {
 			connch[rnmsgcc.ClientId] <- &fs.Msg{'P', rnmsgcc.Msg.Filename, rnmsgcc.Msg.Contents, rnmsgcc.Msg.Numbytes, rnmsgcc.Msg.Exptime, rnmsgcc.Msg.Version}
-			return
+			continue
 		}
 		if err != nil {
-			fmt.Printf("In decode, rnmsgcc.err->%v\n", err)
+		//	fmt.Printf("In decode, rnmsgcc.err->%v\n", err)
 			return
 		}
-		fmt.Printf("Received on channel for client -> %v, msg kind -> %v\n", rnmsgcc.ClientId, rnmsgcc.Msg.Kind)
-		connch[rnmsgcc.ClientId] <- rnmsgcc.Msg
+		
+		response := fs.ProcessMsg(rnmsgcc.Msg, ff, gversion)
+		
+		_,ok := connch[rnmsgcc.ClientId]
+		
+		//fmt.Printf("Received on channel for client -> %v, msg kind -> %v\n", rnmsgcc.ClientId, rnmsgcc.Msg.Kind)
+		if ok==true {
+			connch[rnmsgcc.ClientId] <- response
+		} 	
+		//fmt.Printf("for finishes..!!\n")
 	}
 }
 
 func initRaftNode(i int) (rn RaftNode) {
 	initRaftStateFile("PersistentData_" + strconv.Itoa((i+1)*100))
 	prepareRaftNodeConfigObj()
-	if i == 0 {
-		return New(Config{peers, int64((i + 1) * 100), "PersistentData_" + strconv.Itoa((i+1)*100), 400, 800}, "config.json")
+	if i == 1 {
+		return New(Config{peers, int64((i + 1) * 100), "PersistentData_" + strconv.Itoa((i+1)*100), 4000, 800}, "config.json")
 	} else {
 		return New(Config{peers, int64((i + 1) * 100), "PersistentData_" + strconv.Itoa((i+1)*100), 4000, 800}, "config.json")
 	}
@@ -182,13 +192,13 @@ func initRaftNode(i int) (rn RaftNode) {
 
 func serverMain(i int) {
 	rn := initRaftNode(i)
-	var clientId int64 = int64((i+1)*100)
+	var clientId int64 = int64((i + 1) * 100)
 	var ff = &fs.FS{Dir: make(map[string]*fs.FileInfo, 1000)}
 	var gversion = 0 // global version
 	connch := make(map[int64]chan *fs.Msg)
 	gob.Register(RaftNodeMsg{})
 	go rn.processEvents()
-	go rn.listenToCommitChannels(connch)
+	go rn.listenToCommitChannels(connch, ff, &gversion)
 	tcpaddr, err := net.ResolveTCPAddr("tcp", temp.Peers[i].ServerAddress)
 	check(err)
 	tcp_acceptor, err := net.ListenTCP("tcp", tcpaddr)
@@ -204,12 +214,12 @@ func serverMain(i int) {
 }
 
 func main() {
-	
+
 	//fserver, err := exec.Command("./fserver")
 	//fserver.Stdout = os.Stdout
 	//fserver.Stdin = os.Stdin
 	//fserver.Start()
-	serverindex := os.Args
+	//serverindex := os.Args
 	/*for i := 0 ; i < 5; i++ {
 		fs[i], err := exec.Command("./fs")
 		fs[i].Stdout = os.Stdout
@@ -217,5 +227,7 @@ func main() {
 		fs[i].Start()
 	}*/
 	serverindex := os.Args[1]
-	serverMain(serverindex)
+	si, _ := strconv.Atoi(serverindex)
+	fmt.Printf("Server %v started.\n", si)
+	serverMain(si)
 }
