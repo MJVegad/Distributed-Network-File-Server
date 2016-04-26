@@ -6,10 +6,10 @@ import (
 	"strconv"
 	//"testing"
 	//"time"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	//"runtime"
+	"encoding/json"
+	"io/ioutil"
 	"strings"
 )
 
@@ -24,9 +24,12 @@ type jobject struct {
 }
 
 type peersinfo struct {
-	Id      int64
-	Address string
+	Id            int64
+	Address       string
+	ServerAddress string
 }
+
+var temp jobject
 
 func prepareRaftNodeConfigObj() {
 	file, e := ioutil.ReadFile("./config.json")
@@ -34,7 +37,7 @@ func prepareRaftNodeConfigObj() {
 		fmt.Printf("File error: %v\n", e)
 		os.Exit(1)
 	}
-	var temp jobject
+	///   var temp jobject
 	json.Unmarshal(file, &temp)
 	//fmt.Printf("temp from json=>%v\n", temp)
 
@@ -44,61 +47,22 @@ func prepareRaftNodeConfigObj() {
 	i := 0
 	for _, pp := range temp.Peers {
 		port, _ := strconv.Atoi(strings.Split(pp.Address, ":")[1])
+		//sport,_ := strconv.Atoi(strings.Split(pp.ServerAddress, ":")[1])
 		newnc := NetConfig{pp.Id, strings.Split(pp.Address, ":")[0], int64(port)}
 		peers[i] = newnc
 		i++
 	}
 	//fmt.Printf("peers from json=>%v\n", len(peers))
 	//peers = []NetConfig{NetConfig{100, "localhost", 8001}, NetConfig{200, "localhost", 8002}, NetConfig{300, "localhost", 8003}, NetConfig{400, "localhost", 8004}, NetConfig{500, "localhost", 8005}}
+
 }
-
-/*func TestRaftNodeBasic(t *testing.T) {
-	//runtime.GOMAXPROCS(1000)
-	prepareRaftNodeConfigObj()
-	rnArr := makeRafts()
-
-	// get leader id from a stable system
-	var ldrId int64
-	for {
-		time.Sleep(100 * time.Millisecond)
-		ldrId = getLeader(rnArr)
-		if ldrId != -1 {
-			break
-		}
-	}
-	// get leader raft node object using it's id
-	ldr := getLeaderById(ldrId, rnArr)
-
-	ldr.Append([]byte("foo"))
-	time.Sleep(10 * time.Second)
-	for _, rn := range rnArr {
-		select {
-		case ci := <-rn.CommitChannel():
-			if ci.Err != nil {
-				t.Fatal(ci.Err)
-			}
-			if string(ci.Data) != "foo" {
-				fmt.Printf("Expected->foo, Got->%v . ", ci.Data)
-				t.Fatal("Got different data")
-			}
-		default:
-			t.Fatal("Expected message on all nodes")
-		}
-	}
-	fmt.Println("single append testcase passed.\n")
-	SystemShutdown(rnArr, nil)
-}*/
 
 func makeRafts() []RaftNode {
 	rnArr := make([]RaftNode, totRaftNodes)
 	for i := 0; i < totRaftNodes; i++ {
 		initRaftStateFile("PersistentData_" + strconv.Itoa((i+1)*100))
-//		fmt.Printf("makerafts->peers = %v \n", peers)
-	//	if i==0 {
-		//	rnArr[i] = New(Config{peers, int64((i + 1) * 100), "PersistentData_" + strconv.Itoa((i+1)*100), 400, 500}, jsonFile)
-	//	} else {	
-			rnArr[i] = New(Config{peers, int64((i + 1) * 100), "PersistentData_" + strconv.Itoa((i+1)*100), 4000, 500}, jsonFile)
-		//}
+		rnArr[i] = New(Config{peers, int64((i + 1) * 100), "PersistentData_" + strconv.Itoa((i+1)*100), 4000, 500}, jsonFile)
+		//fmt.Printf("sm_messaging = %v \n", rnArr[i].sm_messaging)
 		go rnArr[i].processEvents()
 	}
 	return rnArr

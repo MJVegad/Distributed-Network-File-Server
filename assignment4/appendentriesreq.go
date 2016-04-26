@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+//"fmt"
 )
 
 type AppendEntriesReqEv struct {
@@ -15,7 +15,7 @@ type AppendEntriesReqEv struct {
 
 func (sm *StateMachine) AppendEntriesReqEventHandler(event interface{}) (actions []interface{}) {
 	cmd := event.(AppendEntriesReqEv)
-	//fmt.Printf("%v\n", cmd)
+	//fmt.Printf("%v %v Inside AppendEntryReq: %v, %v\n", sm.serverId,sm.currentState,cmd)
 	switch sm.currentState {
 	case "leader":
 		if sm.currentTerm <= cmd.Term {
@@ -31,7 +31,6 @@ func (sm *StateMachine) AppendEntriesReqEventHandler(event interface{}) (actions
 			actions = append(actions, Send{peerId: cmd.LeaderId, ev: AppendEntriesRespEv{From: sm.serverId, Term: sm.currentTerm, Success: false}})
 		}
 	case "follower":
-
 		if sm.currentTerm <= cmd.Term {
 			if sm.currentTerm < cmd.Term {
 				sm.votedFor = 0
@@ -40,8 +39,9 @@ func (sm *StateMachine) AppendEntriesReqEventHandler(event interface{}) (actions
 			actions = append(actions, Alarm{t: int64(ElectionTimeoutGenerator(int(sm.ElectionTimeout), int(2*sm.ElectionTimeout)))})
 			actions = append(actions, StateStore{term: sm.currentTerm, votedFor: sm.votedFor})
 			if (cmd.PrevLogTerm == 0) || (cmd.PrevLogIndex < int64(len(sm.log)) && (sm.log[cmd.PrevLogIndex].Term == cmd.PrevLogTerm)) {
+				//fmt.Printf("reaching here.\n")
 				k := 0
-				//fmt.Printf("%v In appendentriesreq: Entries to be updated->%v\n",sm.serverId, cmd.Entries)
+				//			fmt.Printf("%v In appendentriesreq: Entries to be updated->%v\n",sm.serverId, cmd.Entries)
 				templog := make([]logEntry, int(int(cmd.PrevLogIndex)+1+len(cmd.Entries)))
 				for i := 0; i < int(cmd.PrevLogIndex)+1; i++ {
 					templog[i] = sm.log[i]
@@ -54,24 +54,35 @@ func (sm *StateMachine) AppendEntriesReqEventHandler(event interface{}) (actions
 				}
 				sm.log = templog
 
-				//fmt.Printf("%v updated log: %v\n", sm.serverId, sm.log)
+				//		fmt.Printf("%v updated log: %v\n", sm.serverId, sm.log)
 				actions = append(actions, Send{peerId: cmd.LeaderId, ev: AppendEntriesRespEv{From: sm.serverId, Term: cmd.Term, Success: true, Lastindex: int64(len(sm.log) - 1)}})
+				//	fmt.Printf("%v After updating the log: %v, %v\n", sm.serverId,cmd.CommitIndex,sm.commitIndex)
 				if cmd.CommitIndex > sm.commitIndex {
 					if int64(len(sm.log)-1) < cmd.CommitIndex {
 						for i := sm.commitIndex + int64(1); i <= int64(len(sm.log)-1); i++ {
-							fmt.Printf("Follower->%v, Commit data->%v\n", sm.serverId, sm.log[i].Command)
+							//			fmt.Printf("Follower->%v, Commit data->%v\n", sm.serverId, sm.log[i].Command)
 							actions = append(actions, Commit{index: i, command: sm.log[i].Command, err: nil})
 						}
 						sm.commitIndex = int64(len(sm.log) - 1)
 					} else {
 						for i := sm.commitIndex + int64(1); i <= cmd.CommitIndex; i++ {
 							//fmt.Printf("%v In appendentriesreq: Commit data->%v\n", sm.serverId, sm.log[i].command)
+							//		fmt.Printf("Follower->%v, Commit data->%v\n", sm.serverId, sm.log[i].Command)
 							actions = append(actions, Commit{index: i, command: sm.log[i].Command, err: nil})
 						}
 						sm.commitIndex = cmd.CommitIndex
 					}
+				} else {
+					/*for i:=sm.commitIndex+int64(1);i<=int64(len(sm.log)-1);i++ {
+						fmt.Printf("Follower->%v, Commit data->%v\n", sm.serverId, sm.log[i].Command)
+						actions = append(actions, Commit{index: i, command: sm.log[i].Command, err: nil})
+					}
+					sm.commitIndex = int64(len(sm.log)-1)
+					*/
+					//fmt.Printf("commit failure error.\n")
 				}
 			} else {
+				//fmt.Printf("Follower->%v, Commit failure\n", sm.serverId)
 				actions = append(actions, Send{peerId: cmd.LeaderId, ev: AppendEntriesRespEv{From: sm.serverId, Term: cmd.Term, Success: false, Lastindex: int64(len(sm.log) - 1)}})
 			}
 

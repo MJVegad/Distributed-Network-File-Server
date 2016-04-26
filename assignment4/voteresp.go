@@ -1,7 +1,7 @@
 package main
 
 import (
-//"fmt"
+	"fmt"
 )
 
 type VoteRespEv struct {
@@ -25,6 +25,7 @@ func (sm *StateMachine) VoteRespEventHandler(event interface{}) (actions []inter
 			sm.totalvotes = sm.totalvotes + 1
 			if sm.totalvotes >= sm.majority {
 				sm.currentState = "leader"
+				fmt.Printf("Leader elected->%v\n", sm.serverId)
 				actions = append(actions, StateStore{state: sm.currentState, term: sm.currentTerm, votedFor: sm.votedFor})
 				actions = append(actions, Alarm{t: sm.HeartbeatTimeout})
 				for i := 0; i < len(sm.peerIds); i++ {

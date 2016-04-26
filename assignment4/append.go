@@ -1,7 +1,7 @@
 package main
 
 import (
-	//	"fmt"
+	//"fmt"
 	"errors"
 )
 
@@ -14,9 +14,10 @@ func (sm *StateMachine) AppendEventHandler(event interface{}) (actions []interfa
 	//fmt.Printf("Command to append on leader=> %v\n", cmd)
 	switch sm.currentState {
 	case "leader":
+		//fmt.Printf("leader->%v, command on leader->%v\n", sm.serverId, cmd)
 		sm.log = append(sm.log, logEntry{Term: sm.currentTerm, Command: cmd.Data})
 		actions = append(actions, LogStore{index: int64(len(sm.log) - 1), command: sm.log[int64(len(sm.log)-1)]})
-		//fmt.Printf("leader->%v, log->%v\n", sm.serverId, sm.log)
+		//fmt.Printf("leader->%v, log on leader->%v\n", sm.serverId, sm.log)
 		for i := 0; i < len(sm.peerIds); i++ {
 			if sm.serverId != sm.peerIds[i] {
 				if sm.nextIndex[i] != 0 {
@@ -30,8 +31,10 @@ func (sm *StateMachine) AppendEventHandler(event interface{}) (actions []interfa
 		}
 	case "follower":
 		actions = append(actions, Commit{index: int64(len(sm.log)), command: cmd.Data, err: errors.New("It's a follower, Not a leader")})
+	//	fmt.Printf("leader->%v, command on appendfoll->%v\n", sm.serverId, cmd)
 	case "candidate":
 		actions = append(actions, Commit{index: int64(len(sm.log)), command: cmd.Data, err: errors.New("It's a candidate, Not a leader")})
+		//fmt.Printf("leader->%v, command on appendcan->%v\n", sm.serverId, cmd)
 	default:
 		println("Invalid state")
 	}

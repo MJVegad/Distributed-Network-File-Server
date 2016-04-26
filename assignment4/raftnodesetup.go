@@ -65,7 +65,7 @@ func (rn *RaftNode) processEvents() {
 			case AppendEv:
 				rn.eventch <- envelop.Msg.(AppendEv)
 			case AppendEntriesReqEv:
-				//fmt.Printf("follower->%v, received log entries->%v\n", rn.sm.serverId, envelop.Msg.(AppendEntriesReqEv).Entries)
+				//fmt.Printf("follower->%v, received log entries->%v\n",rn.sm.serverId, envelop.Msg.(AppendEntriesReqEv).Entries)
 				rn.eventch <- envelop.Msg.(AppendEntriesReqEv)
 			case AppendEntriesRespEv:
 				rn.eventch <- envelop.Msg.(AppendEntriesRespEv)
@@ -92,11 +92,10 @@ func (rn *RaftNode) processEvents() {
 func New(config Config, jsonFile string) (rnode RaftNode) {
 	rnode.sm.serverId = config.Id
 
-	//fmt.Printf("In New k value: %v\n", len(config.cluster)-1)
 	rnode.sm.peerIds = make([]int64, len(config.cluster)-1, len(config.cluster)-1)
 	k := 0
 	for _, peer := range config.cluster {
-		//fmt.Printf("In New k value: %d\n", k)
+
 		if peer.Id != config.Id {
 			rnode.sm.peerIds[k] = peer.Id
 			k++
@@ -152,7 +151,7 @@ func New(config Config, jsonFile string) (rnode RaftNode) {
 	rnode.sm.totalvotes = int64(0)
 	rnode.sm.novotes = int64(0)
 
-	rnode.eventch = make(chan interface{}, 1000)
+	rnode.eventch = make(chan interface{}, 5000)
 	rnode.commitch = make(chan CommitInfo, 1000)
 	rnode.endch = make(chan bool)
 	//rnode.timeoutch = make(chan TimeoutEv)
@@ -206,7 +205,7 @@ func (rnode *RaftNode) AlarmHandler(obj Alarm) {
 func (rnode *RaftNode) CommitHandler(obj Commit) {
 	//fmt.Printf("%v In CommitHandler: %v\n", rnode.sm.serverId, obj)
 	t1 := CommitInfo{Data: obj.command, Index: obj.index, Err: obj.err}
-	fmt.Printf("On %v -> Commitchannel: %v\n", rnode.sm.serverId, t1)
+	//fmt.Printf("On %v -> Commitchannel: %v\n", rnode.sm.serverId, t1.Data)
 	rnode.commitch <- t1
 }
 
@@ -219,7 +218,7 @@ func (rnode *RaftNode) SendHandler(obj Send) {
 		rnode.sm_messaging.Outbox() <- &cluster.Envelope{Pid: int(obj.peerId), Msg: AppendEv{Data: obj.ev.(AppendEv).Data}}
 	case AppendEntriesReqEv:
 		// rnode.sm_messaging.Outbox() <- &cluster.Envelope{Pid: int(obj.peerId), Msg: AppendEntriesReqEv{Term: obj.ev.(AppendEntriesReqEv).Term, LeaderId: obj.ev.(AppendEntriesReqEv).LeaderId, PrevLogIndex: obj.ev.(AppendEntriesReqEv).PrevLogIndex, PrevLogTerm: obj.ev.(AppendEntriesReqEv).PrevLogTerm, Entries: obj.ev.(AppendEntriesReqEv).Entries, CommitIndex: obj.ev.(AppendEntriesReqEv).CommitIndex}}
-		//fmt.Printf("Leader->%v, Sent log entries->%v\n", rnode.sm.serverId, obj.ev.(AppendEntriesReqEv).Entries)
+		//fmt.Printf("Leader->%v, Sent log entries->%v\n",rnode.sm.serverId, obj.ev.(AppendEntriesReqEv).Entries)
 		rnode.sm_messaging.Outbox() <- &cluster.Envelope{Pid: int(obj.peerId), Msg: obj.ev.(AppendEntriesReqEv)}
 		//fmt.Printf("%v New send handler %v\n", rnode.sm.serverId, obj.ev.(AppendEntriesReqEv).Entries)
 	case AppendEntriesRespEv:

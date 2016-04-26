@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+//"fmt"
 )
 
 type AppendEntriesRespEv struct {
@@ -66,7 +66,7 @@ func (sm *StateMachine) AppendEntriesRespEventHandler(event interface{}) (action
 			if lastCommitIndex >= 0 {
 				if lastCommitIndex > sm.commitIndex && sm.log[lastCommitIndex].Term == sm.currentTerm {
 					for i := sm.commitIndex + int64(1); i <= lastCommitIndex; i++ {
-						fmt.Printf("Leader->%v, Commit data->%v\n", sm.serverId, sm.log[i].Command)
+						//fmt.Printf("Leader->%v, Commit data->%v, index->%v/n", sm.serverId, sm.log[i].Command,i)
 						actions = append(actions, Commit{index: i, command: sm.log[i].Command, err: nil})
 					}
 					sm.commitIndex = lastCommitIndex
