@@ -412,11 +412,16 @@ func TestRPC_ConcurrentWrites(t *testing.T) {
 		case err := <-errCh:
 			t.Fatal(err)
 		}
+	
 	}
+	
+	time.Sleep(3*time.Second)
+	clients[0] = mkClient(t)
+	
 	m, _ := clients[0].read("concWrite")
 	// Ensure the contents are of the form "cl <i> 9"
 	// The last write of any client ends with " 9"
-	if !(m.Kind == 'C' && strings.HasSuffix(string(m.Contents), " 1")) {
+	if !(m.Kind == 'C' && strings.HasSuffix(string(m.Contents), "1")) {
 		t.Fatalf("Expected to be able to read after 1000 writes. Got msg = %v", m)
 	}
 	fmt.Printf("Test_conwrite passed...!!!**************************\n")
