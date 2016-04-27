@@ -7,6 +7,9 @@ import (
 	"github.com/cs733-iitb/log"
 	"math"
 	"time"
+	"os"
+	"bufio"
+	"strconv"
 	//"reflect"
 )
 
@@ -46,7 +49,7 @@ type RaftNode struct {
 	sm           StateMachine
 	sm_messaging cluster.Server
 	logfile      string
-	statefile    string
+	statefile    *os.File
 	resettimer   int64
 	eventch      chan interface{}
 	//timeoutch    chan TimeoutEv
@@ -135,12 +138,45 @@ func New(config Config, jsonFile string) (rnode RaftNode) {
 		rnode.sm.matchIndex[m] = -1
 	}
 
-	rnode.statefile = config.LogDir + "/" + "statefile"
-	currstate, err := log.Open(rnode.statefile)
-	currstate.RegisterSampleEntry(NodePers{})
-	assert(err == nil)
-	defer currstate.Close()
-	if currstate.GetLastIndex() == -1 {
+	//rnode.statefile = config.LogDir + "/" + "statefile"
+	
+	//currstate, err := log.Open(rnode.statefile)
+	
+	//if _,err5:=os.Stat(config.LogDir + "/" + "statefile");os.IsNotExist(err5) {
+		/*	rnode.statefile,_ = os.Create(config.LogDir + "/" + "statefile")
+			w:=bufio.NewWriter(rnode.statefile)
+			_,err:=fmt.Fprintf(w,"%s %s %s\n", "follower","0","0")
+			if err!=nil {
+				fmt.Printf("statefile write error:%v\n",err)
+			}
+			fmt.Printf("statefile created\n")
+			w.Flush()
+			rnode.sm.currentTerm = int64(0)
+			rnode.sm.currentState = "follower"*/
+		
+	//} else {
+			var err9 error
+			rnode.statefile,err9= os.OpenFile(config.LogDir + "_" + "statefile", os.O_RDWR, 0666)
+			if err9 != nil {
+		fmt.Println(err9)
+	}
+			r := bufio.NewReader(rnode.statefile)
+			var currentState, currentTerm, votedFor string
+			_, err := fmt.Fscanf(r, "%s %s %s\n", &currentState, &currentTerm, &votedFor)
+			if err!=nil {
+				fmt.Printf("statefile read error:%v\n",err)
+			}
+			s1,_:=strconv.Atoi(currentTerm)
+			s2,_:=strconv.Atoi(votedFor)
+			rnode.sm.currentTerm = int64(s1)
+			rnode.sm.currentState = currentState
+			rnode.sm.votedFor = int64(s2)
+		
+	//}	
+	//currstate.RegisterSampleEntry(NodePers{})
+	//assert(err == nil)
+	//defer currstate.Close()
+	/*if currstate.GetLastIndex() == -1 {
 		rnode.sm.currentTerm = int64(0)
 		rnode.sm.currentState = "follower"
 	} else {
@@ -149,7 +185,7 @@ func New(config Config, jsonFile string) (rnode RaftNode) {
 		rnode.sm.currentTerm = h.(NodePers).CurrentTerm
 		rnode.sm.currentState = h.(NodePers).CurrentState
 		rnode.sm.votedFor = h.(NodePers).VotedFor
-	}
+	}*/
 
 	rnode.sm.totalvotes = int64(0)
 	rnode.sm.novotes = int64(0)
@@ -181,13 +217,21 @@ func New(config Config, jsonFile string) (rnode RaftNode) {
 }
 
 func (rnode *RaftNode) StateStoreHandler(obj StateStore) {
-	lg, err := log.Open(rnode.statefile)
+	/*lg, err := log.Open(rnode.statefile)
 	lg.RegisterSampleEntry(NodePers{})
 	assert(err == nil)
 	defer lg.Close()
 	i := lg.GetLastIndex()
 	lg.TruncateToEnd(i)
-	lg.Append(NodePers{CurrentTerm: obj.term, VotedFor: obj.votedFor, CurrentState: obj.state})
+	lg.Append(NodePers{CurrentTerm: obj.term, VotedFor: obj.votedFor, CurrentState: obj.state})*/
+	w:=bufio.NewWriter(rnode.statefile)
+			_,err:=fmt.Fprintf(w,"%s %s %s\n", obj.state,obj.state,strconv.Itoa(int(obj.term)),strconv.Itoa(int(obj.votedFor)))
+			if err!=nil {
+				fmt.Printf("statefile write error:%v\n",err)
+			}
+			w.Flush()
+			//rnode.sm.currentTerm = int64(0)
+			//rnode.sm.currentState = "follower"
 }
 
 func (rnode *RaftNode) LogStoreHandler(obj LogStore) {
@@ -209,7 +253,7 @@ func (rnode *RaftNode) CommitHandler(obj Commit) {
 	//fmt.Printf("%v In CommitHandler: %v\n", rnode.sm.serverId, obj)
 	t1 := CommitInfo{Data: obj.command, Index: obj.index, Err: obj.err}
 	rnode.commitch <- t1
-	fmt.Printf("On %v -> Commitchannel: %v\n", rnode.sm.serverId, t1.Err)
+	//fmt.Printf("On %v -> Commitchannel: %v\n", rnode.sm.serverId, t1.Err)
 }
 
 func (rnode *RaftNode) SendHandler(obj Send) {

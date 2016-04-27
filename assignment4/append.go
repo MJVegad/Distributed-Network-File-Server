@@ -2,7 +2,7 @@ package main
 
 import (
 	"errors"
-	"fmt"
+	//"fmt"
 )
 
 type AppendEv struct {
@@ -14,7 +14,7 @@ func (sm *StateMachine) AppendEventHandler(event interface{}) (actions []interfa
 	//fmt.Printf("Command to append on leader=> %v\n", cmd)
 	switch sm.currentState {
 	case "leader":
-		fmt.Printf("leader->%v, command on leader->%v\n", sm.serverId, cmd)
+		//fmt.Printf("leader->%v, command on leader->%v\n", sm.serverId, cmd)
 		sm.log = append(sm.log, logEntry{Term: sm.currentTerm, Command: cmd.Data})
 		actions = append(actions, LogStore{index: int64(len(sm.log) - 1), command: sm.log[int64(len(sm.log)-1)]})
 		//fmt.Printf("leader->%v, log on leader->%v\n", sm.serverId, sm.log)

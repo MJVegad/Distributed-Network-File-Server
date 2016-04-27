@@ -113,7 +113,7 @@ func serve(conn *net.TCPConn, rn RaftNode, clientId int64, connch map[int64]chan
 			}
 		}
 
-		fmt.Printf("Inside serve, msg:%c\n", msg.Kind)
+		//fmt.Printf("Inside serve, msg:%c\n", msg.Kind)
 		if msg.Kind != 'r' {
 			tempmsg := Rnmsg{clientId, msg}
 			rnmsgbytes, err1 := encode(tempmsg)
@@ -228,6 +228,6 @@ func main() {
 	}*/
 	serverindex := os.Args[1]
 	si, _ := strconv.Atoi(serverindex)
-	fmt.Printf("Server %v started.\n", si)
+	//fmt.Printf("Server %v started.\n", si)
 	serverMain(si)
 }

@@ -1,13 +1,14 @@
 package main
 
 import (
-	"github.com/cs733-iitb/log"
+	//"github.com/cs733-iitb/log"
 	"os"
 	"strconv"
 	//"testing"
 	//"time"
 	"fmt"
 	//"runtime"
+	"bufio"
 	"encoding/json"
 	"io/ioutil"
 	"strings"
@@ -79,7 +80,7 @@ func getLeader(rnArr []RaftNode) int64 {
 	}
 	for k, v := range mapIdToVotes {
 		if v >= maj {
-			fmt.Printf("Leader Elected = %v \n", k)
+		//	fmt.Printf("Leader Elected = %v \n", k)
 			ldrId = k
 			break
 		}
@@ -99,7 +100,7 @@ func getLeaderById(ldrId int64, rnArr []RaftNode) *RaftNode {
 
 func initRaftStateFile(logDir string) {
 	cleanup(logDir)
-	stateAttrsFP, err := log.Open(logDir + "/" + "statefile")
+	/*stateAttrsFP, err := log.Open(logDir + "/" + "statefile")
 	stateAttrsFP.RegisterSampleEntry(NodePers{})
 	stateAttrsFP.SetCacheSize(1)
 	assert(err == nil)
@@ -107,8 +108,17 @@ func initRaftStateFile(logDir string) {
 	stateAttrsFP.TruncateToEnd(0)
 	err1 := stateAttrsFP.Append(NodePers{0, 0, "follower"})
 	//fmt.Println(err1)
-	assert(err1 == nil)
-	fmt.Println("file created successfully")
+	assert(err1 == nil)*/
+	//x,_ = os.Create(config.LogDir + "/" + "statefile")
+	x, _ := os.OpenFile(logDir + "_" + "statefile", os.O_RDWR|os.O_CREATE, 0666)
+			w:=bufio.NewWriter(x)
+			_,err:=fmt.Fprintf(w,"%s %s %s\n", "follower","0","0")
+			if err!=nil {
+				fmt.Printf("statefile write error:%v\n",err)
+			}
+		//	fmt.Printf("statefile created\n")
+			w.Flush()
+	//fmt.Println("file created successfully")
 }
 
 func cleanup(logDir string) {
