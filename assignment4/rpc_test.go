@@ -416,6 +416,7 @@ func TestRPC_ConcurrentWrites(t *testing.T) {
 	}
 	
 	time.Sleep(3*time.Second)
+	
 	clients[0] = mkClient(t)
 	
 	m, _ := clients[0].read("concWrite")
